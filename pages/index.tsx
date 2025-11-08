@@ -8,7 +8,10 @@ import HeroSection from "@/components/website/home/HeroSection"
 // import InductionPreview from "@/components/home/InductionPreview"
 
 const HomePage = () => (
-  <Layout>
+  <Layout 
+    title="SoSHSA |  School of Social Science and Humanities Students' Association"
+    description="Official website of the Social Sciences and Humanities Students' Association at the University of The Gambia."
+  >
     <HeroSection />
     {/* <AboutPreview />
     <MagazineShowcase />
