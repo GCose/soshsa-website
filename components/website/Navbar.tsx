@@ -16,7 +16,7 @@ const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 bg-transparent backdrop-blur-sm border-b border-white">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-15">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-12 h-12 rounded-full overflow-hidden transition-transform group-hover:scale-105">

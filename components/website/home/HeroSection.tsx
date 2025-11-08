@@ -17,7 +17,7 @@ const HeroSection = () => (
 
     <div className="relative w-full px-6 lg:px-8 h-full">
       <div className="grid grid-cols-12 gap-8 h-full">
-        <div className="col-span-12 lg:col-span-5 flex items-top pt-50">
+        <div className="col-span-12 lg:col-span-5 flex items-top pt-30 ">
           <h1 className="text-fluid-4xl font-bold text-white leading-[0.9] tracking-tighter">
             Social Sciences
             <br />
