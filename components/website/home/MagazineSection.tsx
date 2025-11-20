@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 const MagazineSection = () => {
   const magazines = [
@@ -28,7 +29,13 @@ const MagazineSection = () => {
       <div className="w-full px-6 lg:px-8">
         <div className="grid grid-cols-12 gap-8 lg:gap-12">
           <div className="col-span-12 lg:col-span-4">
-            <div className="lg:sticky lg:top-32">
+            <motion.div
+              className="lg:sticky lg:top-32"
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
               <p className="text-primary text-sm uppercase tracking-widest mb-4">
                 Publications
               </p>
@@ -64,10 +71,16 @@ const MagazineSection = () => {
                   />
                 </svg>
               </Link>
-            </div>
+            </motion.div>
           </div>
 
-          <div className="col-span-12 lg:col-span-8">
+          <motion.div
+            className="col-span-12 lg:col-span-8"
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-12 sm:col-span-6 lg:col-span-7">
                 <Link
@@ -142,7 +155,7 @@ const MagazineSection = () => {
                 </Link>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

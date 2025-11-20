@@ -1,9 +1,9 @@
-import Link from "next/link"
-import Image from "next/image"
-import { useState } from "react"
+import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -12,18 +12,18 @@ const Navbar = () => {
     { label: "Induction", href: "/induction" },
     { label: "Events", href: "/events" },
     { label: "Resources", href: "/resources" },
-  ]
+  ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-transparent backdrop-blur-sm border-b border-white">
+    <nav className="sticky top-0 z-50 bg-black/30 backdrop-blur-sm border-b border-white">
       <div className="mx-auto px-6 lg:px-8">
         <div className="flex items-center justify-between h-15">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-12 h-12 rounded-full overflow-hidden transition-transform group-hover:scale-105">
-              <Image 
-                src="/images/logo.jpeg" 
-                alt="SoSHSA Logo" 
-                width={48} 
+              <Image
+                src="/images/logo.jpeg"
+                alt="SoSHSA Logo"
+                width={48}
                 height={48}
                 className="object-cover"
               />
@@ -57,7 +57,11 @@ const Navbar = () => {
                   isOpen ? "rotate-45 translate-y-2" : ""
                 }`}
               />
-              <span className={`w-full h-0.5 bg-gray-900 transition-all duration-300 ${isOpen ? "opacity-0" : ""}`} />
+              <span
+                className={`w-full h-0.5 bg-gray-900 transition-all duration-300 ${
+                  isOpen ? "opacity-0" : ""
+                }`}
+              />
               <span
                 className={`w-full h-0.5 bg-gray-900 transition-all duration-300 ${
                   isOpen ? "-rotate-45 -translate-y-2" : ""
@@ -83,7 +87,7 @@ const Navbar = () => {
         )}
       </div>
     </nav>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;
