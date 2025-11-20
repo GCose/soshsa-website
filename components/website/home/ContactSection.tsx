@@ -104,10 +104,10 @@ const ContactSection = () => {
                     id="name"
                     name="name"
                     value={formData.name}
-                    onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                     placeholder="John Doe"
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-b border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                   />
                 </div>
 
@@ -125,7 +125,7 @@ const ContactSection = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
+                    className="w-full px-4 py-3 border-b border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                     placeholder="john@example.com"
                   />
                 </div>
@@ -143,7 +143,7 @@ const ContactSection = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
+                    className="w-full px-4 py-3 border-b border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                     placeholder="+220 123 4567"
                   />
                 </div>
@@ -162,7 +162,7 @@ const ContactSection = () => {
                     onChange={handleChange}
                     required
                     rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors resize-none"
+                    className="w-full px-4 py-3 border-b border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-colors resize-none"
                     placeholder="Tell us what you'd like to discuss..."
                   />
                 </div>
