@@ -1,9 +1,9 @@
 import Layout from "@/components/website/Layout";
+import CTASection from "@/components/website/home/CTASection";
 import HeroSection from "@/components/website/home/HeroSection";
 import AboutSection from "@/components/website/home/AboutSection";
 import EventsSection from "@/components/website/home/EventsSection";
 import MagazineSection from "@/components/website/home/MagazineSection";
-import ContactSection from "@/components/website/home/ContactSection";
 
 const HomePage = () => (
   <Layout
@@ -14,7 +14,7 @@ const HomePage = () => (
     <AboutSection />
     <MagazineSection />
     <EventsSection />
-    <ContactSection />
+    <CTASection />
   </Layout>
 );
 
