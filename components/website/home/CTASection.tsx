@@ -15,16 +15,15 @@ const CTASection = () => {
           <p className="text-primary text-sm uppercase tracking-widest mb-6">
             Join the Movement
           </p>
-          <h2 className="text-fluid-5xl font-bold text-white leading-tight mb-8">
+          <h2 className="text-fluid-3xl md:text-fluid-5xl font-bold text-white leading-tight mb-8">
             Ready to Make an Impact?
           </h2>
-          <p className="text-white/80 text-xl leading-relaxed">
+          <p className="text-white/80 text-lg md:text-xl leading-relaxed">
             Whether you{"'"}re a current student, prospective member, or partner
             organization—we{"'"}re here to collaborate and grow together.
           </p>
         </motion.div>
 
-        {/* 3-Column Grid with Visible Dividers */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-0 border-t border-white/10 mb-16">
           <motion.div
             className="p-8 lg:p-12 border-b md:border-b-0 md:border-r border-white/10"
@@ -72,7 +71,6 @@ const CTASection = () => {
           </motion.div>
         </div>
 
-        {/* CTA Buttons */}
         <motion.div
           className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16"
           initial={{ opacity: 0, y: 20 }}
@@ -121,7 +119,6 @@ const CTASection = () => {
           </Link>
         </motion.div>
 
-        {/* Stats Grid with Dividers */}
         <motion.div
           className="grid grid-cols-2 md:grid-cols-4 gap-0 border-t border-white/10 pt-16"
           initial={{ opacity: 0 }}
