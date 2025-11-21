@@ -17,7 +17,7 @@ const HeroSection = () => (
     </div>
 
     <div className="relative w-full px-4 sm:px-6 lg:px-8 py-32">
-      <div className="max-w-5xl mx-auto text-center">
+      <div className="max-w-6xl mx-auto text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -30,45 +30,6 @@ const HeroSection = () => (
             <br />
             Students Association
           </h1>
-        </motion.div>
-
-        <motion.div
-          className="w-32 h-px bg-white mx-auto mb-12"
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-        />
-
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-        >
-          <div className="text-center">
-            <div className="text-2xl lg:text-5xl font-bold text-primary mb-2">
-              500+
-            </div>
-            <div className="text-white/80 text-sm uppercase tracking-wider">
-              Active Students
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl lg:text-5xl font-bold text-primary mb-2">
-              15+
-            </div>
-            <div className="text-white/80 text-sm uppercase tracking-wider">
-              Programs
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl lg:text-5xl font-bold text-primary mb-2">
-              Est. 2010
-            </div>
-            <div className="text-white/80 text-sm uppercase tracking-wider">
-              At UTG
-            </div>
-          </div>
         </motion.div>
 
         <motion.div

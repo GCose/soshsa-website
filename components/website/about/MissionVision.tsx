@@ -12,7 +12,7 @@ const MissionVision = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 1 }}
             >
               <div className="bg-primary p-2 inline-block mb-6">
                 <p className="text-white text-sm uppercase tracking-widest px-4 py-2">
@@ -45,7 +45,7 @@ const MissionVision = () => {
               initial={{ opacity: 0, x: 40 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 1, delay: 0.2 }}
             >
               <div className="relative h-[400px] md:h-[800px]">
                 <Image
@@ -66,7 +66,7 @@ const MissionVision = () => {
               initial={{ opacity: 0, x: -40 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 1, delay: 0.2 }}
             >
               <div className="relative h-[400px] md:h-[800px]">
                 <Image
@@ -83,7 +83,7 @@ const MissionVision = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 1 }}
             >
               <div className="bg-primary p-2 inline-block mb-6">
                 <p className="text-white text-sm uppercase tracking-widest px-4 py-2">

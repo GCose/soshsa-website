@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #14b8a6;       
-  --color-accent: #f97316;         
+  --color-primary: #14b8a6;
+  --color-accent: #f97316;
   --color-dark: #0a0a0a;
   --color-white: #ffffff;
-  
+
   --color-gray-50: #fafafa;
   --color-gray-100: #f5f5f5;
   --color-gray-200: #e5e5e5;
@@ -16,7 +16,7 @@
   --color-gray-700: #404040;
   --color-gray-800: #262626;
   --color-gray-900: #171717;
-  
+
   --text-fluid-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
   --text-fluid-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
   --text-fluid-lg: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
@@ -26,7 +26,7 @@
   --text-fluid-4xl: clamp(3.052rem, 2rem + 5.26vw, 5rem);
   --text-fluid-5xl: clamp(3.815rem, 2.5rem + 6.575vw, 6.5rem);
   --text-fluid-6xl: clamp(4.768rem, 3rem + 3.84vw, 8rem);
-  
+
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -39,7 +39,7 @@
   --space-16: 4rem;
   --space-20: 5rem;
   --space-24: 6rem;
-} 
+}
 
 html {
   font-size: 16px;
@@ -55,7 +55,12 @@ body {
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 600;
   line-height: 1.2;
   font-family: "Playfair Display", Georgia, serif;

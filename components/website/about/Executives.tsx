@@ -6,37 +6,37 @@ const Executives = () => {
     {
       name: "Aisha Jallow",
       position: "President",
-      image: "/images/executives/president.jpg",
+      image: "/images/about/exec-1.jpg",
       bio: "Leading SoSHSA with a vision for inclusive student representation and academic excellence across all divisions.",
     },
     {
       name: "Omar Ceesay",
       position: "Vice President",
-      image: "/images/executives/vp.jpg",
+      image: "/images/about/exec-2.jpg",
       bio: "Championing student welfare initiatives and coordinating strategic partnerships with community organizations.",
     },
     {
       name: "Fatou Sanneh",
       position: "Secretary General",
-      image: "/images/executives/secretary.jpg",
+      image: "/images/about/exec-3.jpg",
       bio: "Managing organizational operations and ensuring transparent communication across all association activities.",
     },
     {
       name: "Lamin Bah",
       position: "Treasurer",
-      image: "/images/executives/treasurer.jpg",
+      image: "/images/about/exec-4.jpg",
       bio: "Overseeing financial planning and ensuring responsible allocation of resources for student programs.",
     },
     {
       name: "Mariama Drammeh",
       position: "Public Relations Officer",
-      image: "/images/executives/pro.jpg",
+      image: "/images/about/exec-5.jpg",
       bio: "Building community relations and amplifying SoSHSA's voice across multiple platforms and media.",
     },
     {
       name: "Modou Jallow",
       position: "Programs Director",
-      image: "/images/executives/programs.jpg",
+      image: "/images/about/exec-6.jpg",
       bio: "Designing and executing impactful programs that directly serve student interests and community needs.",
     },
   ];
