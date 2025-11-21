@@ -11,7 +11,7 @@ const EventsSection = () => {
       description:
         "Join us for our yearly AGM where we review achievements and set goals for the upcoming year.",
       location: "Main Campus Auditorium",
-      image: "/images/home/event-1.webp",
+      image: "/images/home/event-1.jpg",
       type: "Meeting",
     },
     {
@@ -21,7 +21,7 @@ const EventsSection = () => {
       description:
         "Engaging with local communities to promote education and social awareness.",
       location: "Banjul Community Center",
-      image: "/images/home/event-2.webp",
+      image: "/images/home/event-2.jpg",
       type: "Outreach",
     },
     {
@@ -31,7 +31,7 @@ const EventsSection = () => {
       description:
         "Start the year strong with our intensive workshop on research methodologies.",
       location: "UTG Library Hall",
-      image: "/images/home/event-3.webp",
+      image: "/images/home/event-3.jpg",
       type: "Workshop",
     },
   ];
@@ -94,9 +94,9 @@ const EventsSection = () => {
             >
               <div className="relative h-[800px] overflow-hidden bg-gray-200 mb-6">
                 <Image
+                  fill
                   src={events[0].image}
                   alt={events[0].title}
-                  fill
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />

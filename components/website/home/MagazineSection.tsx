@@ -8,19 +8,19 @@ const MagazineSection = () => {
       id: 1,
       title: "Issue 12",
       year: "2024",
-      cover: "/images/home/magazine-1.webp",
+      cover: "/images/home/magazine-1.jpg",
     },
     {
       id: 2,
       title: "Issue 11",
       year: "2024",
-      cover: "/images/home/magazine-2.webp",
+      cover: "/images/home/magazine-2.jpg",
     },
     {
       id: 3,
       title: "Issue 10",
       year: "2023",
-      cover: "/images/home/magazine-3.webp",
+      cover: "/images/home/magazine-3.jpg",
     },
   ];
 
