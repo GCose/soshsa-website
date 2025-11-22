@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 const CommunityImpact = () => {
   const impactAreas = [
@@ -7,19 +8,19 @@ const CommunityImpact = () => {
       title: "Radio Programs",
       description:
         "Broadcasting student voices and community stories across The Gambia, reaching thousands of listeners weekly with programs that educate, inform, and inspire.",
-      image: "/images/about/radio.jpg",
+      image: "/images/about/community-1.jpg",
     },
     {
       title: "School Outreach",
       description:
         "Partnering with secondary schools to mentor the next generation, sharing knowledge about university life and academic pathways in social sciences and humanities.",
-      image: "/images/about/school.jpg",
+      image: "/images/about/community-2.jpg",
     },
     {
       title: "Community Service",
       description:
         "Organizing regular initiatives that give back to local communities—from literacy programs to cultural preservation projects that celebrate Gambian heritage.",
-      image: "/images/about/service.jpg",
+      image: "/images/about/community-3.jpg",
     },
   ];
 
@@ -98,12 +99,12 @@ const CommunityImpact = () => {
             Join us in building a stronger student community and creating
             lasting impact across The Gambia.
           </p>
-          <a
+          <Link
             href="/contact"
             className="inline-block bg-primary text-white px-8 py-4 text-lg font-semibold hover:bg-primary/90 transition-colors"
           >
             Get Involved
-          </a>
+          </Link>
         </motion.div>
       </div>
     </section>
