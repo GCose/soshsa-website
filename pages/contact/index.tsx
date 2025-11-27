@@ -40,7 +40,7 @@ const ContactPage = () => {
             <p className="text-primary text-sm uppercase tracking-widest mb-4">
               Get In Touch
             </p>
-            <h1 className="text-fluid-5xl font-bold text-gray-900 leading-tight mb-6">
+            <h1 className="text-fluid-4xl font-bold text-gray-900 leading-tight mb-6">
               Let{"'"}s Start a Conversation
             </h1>
             <p className="text-gray-600 text-lg leading-relaxed">
