@@ -29,13 +29,14 @@ const MagazineSection = () => {
       <div className="w-full px-6 lg:px-8">
         <div className="grid grid-cols-12 gap-8 lg:gap-12">
           <div className="col-span-12 lg:col-span-4">
-            <motion.div
-              className="lg:sticky lg:top-32"
-              initial={{ opacity: 0, x: -40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
+            <div className="overflow-hidden">
+              <motion.div
+                className="lg:sticky lg:top-32"
+                initial={{ opacity: 0, x: -40 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
               <p className="text-primary text-sm uppercase tracking-widest mb-4">
                 Publications
               </p>
@@ -71,16 +72,17 @@ const MagazineSection = () => {
                   />
                 </svg>
               </Link>
-            </motion.div>
+              </motion.div>
+            </div>
           </div>
 
-          <motion.div
-            className="col-span-12 lg:col-span-8"
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
+          <div className="col-span-12 lg:col-span-8 overflow-hidden">
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
             <div className="grid grid-cols-12 gap-6">
               <div className="col-span-12 sm:col-span-6 lg:col-span-7">
                 <Link
@@ -155,7 +157,8 @@ const MagazineSection = () => {
                 </Link>
               </div>
             </div>
-          </motion.div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </section>

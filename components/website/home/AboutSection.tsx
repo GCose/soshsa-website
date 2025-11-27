@@ -13,7 +13,7 @@ const AboutSection = () => {
   return (
     <section className="relative min-h-screen bg-white py-20 lg:py-32">
       <div className="w-full px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 overflow-hidden">
           <motion.div className="lg:col-span-7" {...fadeInUp}>
             <div className="mb-8">
               <p className="text-primary text-sm uppercase tracking-widest mb-3">
