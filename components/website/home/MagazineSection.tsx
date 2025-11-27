@@ -26,8 +26,8 @@ const MagazineSection = () => {
 
   return (
     <section className="relative min-h-screen bg-gray-900 py-20 lg:py-32">
-      <div className="w-full px-6 lg:px-8">
-        <div className="grid grid-cols-12 gap-8 lg:gap-12">
+      <div className="w-full max-w-full px-6 lg:px-8">
+        <div className="grid grid-cols-12 gap-4 md:gap-6 lg:gap-12">
           <div className="col-span-12 lg:col-span-4">
             <div className="overflow-hidden">
               <motion.div
