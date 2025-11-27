@@ -41,6 +41,11 @@
   --space-24: 6rem;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 html {
   font-size: 16px;
   scroll-behavior: smooth;
