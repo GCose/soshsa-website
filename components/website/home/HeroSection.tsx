@@ -24,7 +24,7 @@ const HeroSection = () => (
           transition={{ duration: 0.8 }}
         >
           <h1 className="text-fluid-5xl font-bold text-white leading-[0.95] tracking-tight mb-8">
-            School of Social Science
+            School of Social Sciences
             <br />
             <span className="text-primary">& Humanities</span>
             <br />
