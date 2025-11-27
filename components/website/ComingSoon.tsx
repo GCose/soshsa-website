@@ -77,7 +77,7 @@ const ComingSoon = ({ title, description }: ComingSoonProps) => {
           transition={{ duration: 0.6, delay: 0.3 }}
         >
           <p className="text-white/60 text-lg">
-            We're working hard to bring you something amazing. Stay tuned!
+            We{"'"}re working hard to bring you something amazing. Stay tuned!
           </p>
         </motion.div>
       </div>
