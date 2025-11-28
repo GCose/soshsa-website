@@ -28,7 +28,7 @@ const HeroSection = () => (
             <br />
             <span className="text-primary">& Humanities</span>
             <br />
-            Students' Association
+            Students{"'"} Association
           </h1>
         </motion.div>
 
