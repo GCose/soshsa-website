@@ -146,7 +146,7 @@ const ExecutivesPage = () => {
 
   return (
     <DashboardLayout pageTitle="Executives">
-      <div className="space-y-6">
+      <div className="space-y-10">
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           <SearchBar
             placeholder="Search by name or position..."
