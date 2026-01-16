@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import {
   Mail,
@@ -16,27 +16,60 @@ import {
   LayoutDashboard,
   Link as LinkIcon,
   ArrowLeftIcon,
+  ChevronDown,
+  User,
 } from "lucide-react";
 import { DashboardLayoutProps } from "@/types/interface/dashboard";
 
 const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const navigation = [
-    { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-    { name: "Executives", href: "/admin/executives", icon: Users },
-    { name: "Events", href: "/admin/events", icon: Calendar },
-    { name: "News", href: "/admin/news", icon: BookOpen },
-    { name: "Magazine", href: "/admin/magazines", icon: BookOpen },
-    { name: "Comments", href: "/admin/comments", icon: MessageSquare },
-    { name: "Contact Inbox", href: "/admin/contact", icon: Mail },
-    { name: "Courses", href: "/admin/courses", icon: GraduationCap },
-    { name: "Resources", href: "/admin/resources", icon: LinkIcon },
-    { name: "Settings", href: "/admin/settings", icon: Settings },
+  const navigationGroups = [
+    {
+      title: "MAIN",
+      items: [
+        { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+      ],
+    },
+    {
+      title: "CONTENT",
+      items: [
+        { name: "Executives", href: "/admin/executives", icon: Users },
+        { name: "Events", href: "/admin/events", icon: Calendar },
+        { name: "News", href: "/admin/news", icon: BookOpen },
+        { name: "Magazine", href: "/admin/magazines", icon: BookOpen },
+        { name: "Comments", href: "/admin/comments", icon: MessageSquare },
+        { name: "Courses", href: "/admin/courses", icon: GraduationCap },
+        { name: "Resources", href: "/admin/resources", icon: LinkIcon },
+      ],
+    },
+    {
+      title: "SYSTEM",
+      items: [
+        { name: "Contact Inbox", href: "/admin/contact", icon: Mail },
+        { name: "Settings", href: "/admin/settings", icon: Settings },
+      ],
+    },
   ];
 
   const isActive = (href: string) => router.pathname === href;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -75,47 +108,43 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
             </button>
           </div>
 
-          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
+          <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+            {navigationGroups.map((group) => (
+              <div key={group.title}>
+                {sidebarOpen && (
+                  <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    {group.title}
+                  </h3>
+                )}
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.href);
 
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded transition-colors ${
-                    active
-                      ? " text-teal-500 bg-teal-100/70"
-                      : "text-gray-700 hover:bg-gray-100"
-                  } ${!sidebarOpen && "justify-center"}`}
-                  title={!sidebarOpen ? item.name : ""}
-                >
-                  <Icon size={20} />
-                  {sidebarOpen && (
-                    <span className="text-sm font-medium">{item.name}</span>
-                  )}
-                </Link>
-              );
-            })}
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded transition-colors ${
+                          active
+                            ? " text-teal-500 bg-teal-100/70"
+                            : "text-gray-700 hover:bg-gray-100"
+                        } ${!sidebarOpen && "justify-center"}`}
+                        title={!sidebarOpen ? item.name : ""}
+                      >
+                        <Icon size={20} />
+                        {sidebarOpen && (
+                          <span className="text-sm font-medium">
+                            {item.name}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
-
-          <div className="p-3 ">
-            <button
-              onClick={() => {
-                router.push("/admin/auth/sign-in");
-              }}
-              className={`cursor-pointer flex items-center gap-3 px-3 py-2.5 w-full text-gray-700 hover:bg-gray-100 rounded transition-colors ${
-                !sidebarOpen && "justify-center"
-              }`}
-              title={!sidebarOpen ? "Logout" : ""}
-            >
-              <LogOut size={20} />
-              {sidebarOpen && (
-                <span className="text-sm font-medium">Logout</span>
-              )}
-            </button>
-          </div>
         </aside>
 
         <div
@@ -123,8 +152,62 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
             sidebarOpen ? "ml-64" : "ml-20"
           }`}
         >
-          <header className="sticky top-0 z-30 bg-white h-16 flex items-center px-8">
+          <header className="sticky top-0 z-30 bg-white h-16 flex items-center justify-between px-8 ">
             <h1 className="text-2xl font-bold text-gray-900">{pageTitle}</h1>
+
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="cursor-pointer flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full bg-teal-500/10 flex items-center justify-center">
+                  <User size={20} className="text-teal-500" />
+                </div>
+                <div className="text-left hidden sm:block">
+                  <p className="text-sm font-medium text-gray-900">
+                    Admin User
+                  </p>
+                  <p className="text-xs text-gray-500">admin@soshsa.com</p>
+                </div>
+                <ChevronDown
+                  size={16}
+                  className={`text-gray-500 transition-transform ${
+                    dropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg border border-gray-200 shadow-lg py-2">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-900">
+                      Admin User
+                    </p>
+                    <p className="text-xs text-gray-500">admin@soshsa.com</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      router.push("/admin/settings");
+                    }}
+                    className="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <Settings size={16} />
+                    Settings
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      router.push("/admin/auth/sign-in");
+                    }}
+                    className="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut size={16} />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </header>
 
           <main className="p-8 bg-white">{children}</main>
