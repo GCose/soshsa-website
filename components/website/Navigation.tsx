@@ -1,10 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const lastScrollY = useRef(0);
+
   const router = useRouter();
 
   const navLinks = [
@@ -16,6 +19,24 @@ const Navbar = () => {
     { label: "Contact", href: "/contact" },
   ];
 
+  useEffect(() => {
+    const onScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY.current && currentScrollY > 1) {
+        setHidden(true);
+      } else {
+        setHidden(false);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const isActive = (href: string) => {
     if (href === "/") {
       return router.pathname === "/";
@@ -24,7 +45,12 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-black backdrop-blur-sm border-b border-white">
+    <nav
+      className={`sticky top-0 z-50 bg-black backdrop-blur-sm border-b border-white
+  transition-transform duration-300 ${
+    hidden ? "-translate-y-full" : "translate-y-0"
+  }`}
+    >
       <div className="mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           <Link href="/" className="flex items-center gap-3 group">
