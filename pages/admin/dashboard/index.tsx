@@ -181,7 +181,7 @@ const DashboardPage = () => {
           </h2>
           <a
             href="/admin/contact"
-            className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+            className="text-sm text-primary hover:text-primary/80 font-medium transition-colors cursor-pointer"
           >
             View All →
           </a>

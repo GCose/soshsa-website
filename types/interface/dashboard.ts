@@ -127,3 +127,21 @@ export interface Resource {
     order: number;
     createdAt: string;
 }
+
+export interface SheetProps {
+    isOpen: boolean;
+    onClose: () => void;
+    title?: string;
+    children: ReactNode;
+    size?: "sm" | "md" | "lg" | "xl" | "full";
+}
+
+export interface NewsArticle {
+    id: string;
+    title: string;
+    excerpt: string;
+    author: string;
+    isPublished: boolean;
+    publishedAt: string;
+    createdAt: string;
+}

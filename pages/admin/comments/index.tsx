@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, X } from "lucide-react";
 // import { GetServerSideProps } from "next";
 import Table from "@/components/dashboard/ui/Table";
+import { renderApprovedBadge } from "@/utils/badge";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
 import { TableColumn, Comment } from "@/types/interface/dashboard";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
@@ -113,17 +114,8 @@ const CommentsPage = () => {
     {
       key: "isApproved",
       label: "Status",
-      render: (value: string | boolean) => (
-        <span
-          className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-md ${
-            value
-              ? "bg-green-100 text-green-700 "
-              : "bg-yellow-100 text-yellow-700 "
-          }`}
-        >
-          {value ? "Approved" : "Pending"}
-        </span>
-      ),
+      render: (value: string | boolean) =>
+        renderApprovedBadge(value as boolean),
     },
     {
       key: "id",
@@ -133,7 +125,7 @@ const CommentsPage = () => {
           {!row.isApproved && (
             <button
               onClick={() => handleApprove(value as string)}
-              className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
+              className="cursor-pointer p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
               title="Approve"
             >
               <Check size={16} />
@@ -143,7 +135,7 @@ const CommentsPage = () => {
             onClick={() =>
               setDeleteModal({ isOpen: true, id: value as string })
             }
-            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+            className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
             <X size={16} />
@@ -166,7 +158,7 @@ const CommentsPage = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setFilterStatus("all")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filterStatus === "all"
                   ? "bg-primary text-white"
                   : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -176,7 +168,7 @@ const CommentsPage = () => {
             </button>
             <button
               onClick={() => setFilterStatus("pending")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filterStatus === "pending"
                   ? "bg-primary text-white"
                   : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -186,7 +178,7 @@ const CommentsPage = () => {
             </button>
             <button
               onClick={() => setFilterStatus("approved")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filterStatus === "approved"
                   ? "bg-primary text-white"
                   : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"

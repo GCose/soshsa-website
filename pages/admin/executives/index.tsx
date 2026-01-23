@@ -1,9 +1,11 @@
 import Image from "next/image";
 import { useState } from "react";
-import { useRouter } from "next/router";
 // import { GetServerSideProps } from "next";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { renderStatusBadge } from "@/utils/badge";
+import Sheet from "@/components/dashboard/ui/Sheet";
 import Table from "@/components/dashboard/ui/Table";
+import Input from "@/components/dashboard/ui/InputField";
+import { Plus, Edit, Trash2, Upload } from "lucide-react";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
 import { Executive, TableColumn } from "@/types/interface/dashboard";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
@@ -52,15 +54,68 @@ const mockExecutives: Executive[] = [
 ];
 
 const ExecutivesPage = () => {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [executives, setExecutives] = useState(mockExecutives);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingExecutive, setEditingExecutive] = useState<Executive | null>(
+    null
+  );
+  const [imagePreview, setImagePreview] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    position: "",
+    biography: "",
+    isActive: true,
+  });
 
   const filteredExecutives = executives.filter(
     (exec) =>
       exec.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       exec.position.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleOpenSheet = (executive?: Executive) => {
+    if (executive) {
+      setEditingExecutive(executive);
+      setFormData({
+        name: executive.name,
+        position: executive.position,
+        biography: "",
+        isActive: executive.isActive,
+      });
+      setImagePreview(executive.image);
+    } else {
+      setEditingExecutive(null);
+      setFormData({ name: "", position: "", biography: "", isActive: true });
+      setImagePreview("");
+    }
+    setSheetOpen(true);
+  };
+
+  const handleCloseSheet = () => {
+    setSheetOpen(false);
+    setEditingExecutive(null);
+    setFormData({ name: "", position: "", biography: "", isActive: true });
+    setImagePreview("");
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle form submission here
+    console.log("Form submitted:", formData);
+    handleCloseSheet();
+  };
 
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this executive?")) {
@@ -97,17 +152,7 @@ const ExecutivesPage = () => {
     {
       key: "isActive",
       label: "Status",
-      render: (value: string | boolean) => (
-        <span
-          className={`inline-flex px-2.5 py-1 text-xs font-medium rounded border ${
-            value
-              ? "bg-green-100 text-green-700 border-green-300"
-              : "bg-gray-100 text-gray-700 border-gray-300"
-          }`}
-        >
-          {value ? "Active" : "Inactive"}
-        </span>
-      ),
+      render: (value: string | boolean) => renderStatusBadge(value as boolean),
     },
     {
       key: "createdAt",
@@ -123,18 +168,18 @@ const ExecutivesPage = () => {
     {
       key: "id",
       label: "Actions",
-      render: (value: string | boolean) => (
+      render: (value: string | boolean, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => router.push(`/admin/executives/${value}/edit`)}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            onClick={() => handleOpenSheet(row)}
+            className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Edit"
           >
             <Edit size={16} />
           </button>
           <button
             onClick={() => handleDelete(value as string)}
-            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+            className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
             <Trash2 size={16} />
@@ -154,8 +199,8 @@ const ExecutivesPage = () => {
             className="max-w-lg"
           />
           <button
-            onClick={() => router.push("/admin/executives/create")}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            onClick={() => handleOpenSheet()}
+            className="cursor-pointer flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
           >
             <Plus size={20} />
             Add Executive
@@ -168,6 +213,125 @@ const ExecutivesPage = () => {
           emptyMessage="No executives found"
         />
       </div>
+
+      <Sheet
+        isOpen={sheetOpen}
+        onClose={handleCloseSheet}
+        title={editingExecutive ? "Edit Executive" : "Add Executive"}
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Photo
+            </label>
+            <div className="flex items-start gap-6">
+              {imagePreview ? (
+                <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 relative">
+                  <Image
+                    src={imagePreview}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Upload size={32} className="text-gray-400" />
+                </div>
+              )}
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label
+                  htmlFor="image-upload"
+                  className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <Upload size={16} />
+                  Upload Photo
+                </label>
+                <p className="text-xs text-gray-500 mt-2">
+                  JPG, PNG or WEBP. Max 5MB.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <Input
+            label="Full Name"
+            type="text"
+            placeholder="Enter full name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            required
+          />
+
+          <Input
+            label="Position"
+            type="text"
+            placeholder="e.g., President, Vice President"
+            value={formData.position}
+            onChange={(e) =>
+              setFormData({ ...formData, position: e.target.value })
+            }
+            required
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Biography
+            </label>
+            <textarea
+              value={formData.biography}
+              onChange={(e) =>
+                setFormData({ ...formData, biography: e.target.value })
+              }
+              rows={5}
+              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+              placeholder="Write a brief biography..."
+            />
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isActive"
+              checked={formData.isActive}
+              onChange={(e) =>
+                setFormData({ ...formData, isActive: e.target.checked })
+              }
+              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+            />
+            <label
+              htmlFor="isActive"
+              className="text-sm font-medium text-gray-700"
+            >
+              Active (show on website)
+            </label>
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <button
+              type="submit"
+              className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            >
+              {editingExecutive ? "Update Executive" : "Add Executive"}
+            </button>
+            <button
+              type="button"
+              onClick={handleCloseSheet}
+              className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </Sheet>
     </DashboardLayout>
   );
 };

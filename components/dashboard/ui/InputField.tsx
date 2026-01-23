@@ -13,12 +13,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <input
           ref={ref}
+          style={{ boxShadow: "none", outline: "none" }}
           className={`
             w-full px-4 py-2.5 
             bg-white border border-gray-300 rounded-lg
             text-gray-900 placeholder:text-gray-400
-            focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-            disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
+            focus:outline-none focus-visible:outline-none
+          focus:border-teal-400 disabled:text-gray-500 disabled:cursor-not-allowed
             transition-colors
             ${
               error

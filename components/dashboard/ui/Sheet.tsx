@@ -1,14 +1,14 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
-import { ModalProps } from "@/types/interface/dashboard";
+import { SheetProps } from "@/types/interface/dashboard";
 
-const Modal = ({
+const Sheet = ({
   isOpen,
   onClose,
   title,
   children,
-  size = "md",
-}: ModalProps) => {
+  size = "lg",
+}: SheetProps) => {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -39,20 +39,21 @@ const Modal = ({
     md: "max-w-lg",
     lg: "max-w-2xl",
     xl: "max-w-4xl",
+    full: "max-w-full",
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex">
       <div
         className="absolute inset-0 bg-black/50 transition-opacity"
         onClick={onClose}
       />
 
       <div
-        className={`relative bg-white rounded-lg shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden flex flex-col`}
+        className={`ml-auto relative ${sizeClasses[size]} w-full h-full bg-white shadow-2xl flex flex-col animate-slide-in-right`}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 shrink-0 bg-white">
             <h2 className="text-xl font-bold text-gray-900">{title}</h2>
             <button
               onClick={onClose}
@@ -63,10 +64,27 @@ const Modal = ({
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 py-6 bg-gray-50">
+          {children}
+        </div>
       </div>
+
+      <style jsx>{`
+        @keyframes slide-in-right {
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+
+        .animate-slide-in-right {
+          animation: slide-in-right 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
 
-export default Modal;
+export default Sheet;

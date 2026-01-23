@@ -1,6 +1,7 @@
 import { useState } from "react";
-// import { GetServerSideProps } from "next";
 // import { useRouter } from "next/router";
+// import { GetServerSideProps } from "next";
+import { renderTypeBadge } from "@/utils/badge";
 import Table from "@/components/dashboard/ui/Table";
 import Input from "@/components/dashboard/ui/InputField";
 import Modal from "@/components/dashboard/ui/modals/Modal";
@@ -88,11 +89,8 @@ const ResourcesPage = () => {
     {
       key: "category",
       label: "Category",
-      render: (value: string | boolean | number) => (
-        <span className="inline-flex px-2.5 py-1 text-xs font-medium rounded border bg-blue-100 text-blue-700 border-blue-300">
-          {value}
-        </span>
-      ),
+      render: (value: string | boolean | number) =>
+        renderTypeBadge(value as string),
     },
     {
       key: "url",
@@ -102,7 +100,7 @@ const ResourcesPage = () => {
           href={value as string}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-primary hover:text-primary/80"
+          className="flex items-center gap-1 text-primary hover:text-primary/80 cursor-pointer"
           onClick={(e) => e.stopPropagation()}
         >
           <span className="text-sm truncate max-w-[200px]">{value}</span>
@@ -117,7 +115,7 @@ const ResourcesPage = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setEditModal({ isOpen: true, resource: row })}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Edit"
           >
             <Edit size={16} />
@@ -126,7 +124,7 @@ const ResourcesPage = () => {
             onClick={() =>
               setDeleteModal({ isOpen: true, id: value as string })
             }
-            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+            className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
             <Trash2 size={16} />
@@ -147,7 +145,7 @@ const ResourcesPage = () => {
           />
           <button
             onClick={() => setEditModal({ isOpen: true, resource: null })}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="cursor-pointer flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
           >
             <Plus size={20} />
             Add Resource
@@ -215,14 +213,14 @@ const ResourcesPage = () => {
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              className="flex-1 bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              className="cursor-pointer flex-1 bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
             >
               {editModal.resource ? "Update" : "Add"} Resource
             </button>
             <button
               type="button"
               onClick={() => setEditModal({ isOpen: false, resource: null })}
-              className="px-6 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="cursor-pointer px-6 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
