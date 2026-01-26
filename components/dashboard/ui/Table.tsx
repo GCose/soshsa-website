@@ -45,7 +45,7 @@ const Table = <T,>({
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-y border-teal-300">
+              <tr className="bg-teal-50">
                 {columns.map((column) => (
                   <th
                     key={column.key}

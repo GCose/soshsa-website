@@ -2,7 +2,7 @@ import { StatsCardProps } from "@/types/interface/dashboard";
 
 const StatsCard = ({ title, value, icon }: StatsCardProps) => {
   return (
-    <div className="bg-transparent cursor-pointer border-teal-300 border rounded-lg p-6 transition-all hover:shadow-md hover:shadow-teal-100">
+    <div className="bg-transparent cursor-pointer border-teal-300 border rounded-lg p-6 transition-all shadow-md shadow-teal-100 hover:shadow-md hover:shadow-teal-200">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm text-gray-600 uppercase tracking-wide mb-2">

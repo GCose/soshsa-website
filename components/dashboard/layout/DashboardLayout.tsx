@@ -23,6 +23,7 @@ import { DashboardLayoutProps } from "@/types/interface/dashboard";
 
 const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -77,10 +78,18 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
         <title>SoSHSA Admin | {pageTitle}</title>
       </Head>
       <div className="min-h-screen bg-white">
+        {mobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+
         <aside
-          className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 bg-gray-50 ${
-            sidebarOpen ? "w-64" : "w-17"
-          }`}
+          className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 bg-gray-50 
+            ${sidebarOpen ? "w-64" : "w-20"} 
+            ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
+            lg:translate-x-0`}
         >
           <div className="flex items-center justify-between h-16 px-4">
             {sidebarOpen && (
@@ -102,9 +111,15 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
             )}
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="cursor-pointer rounded-full bg-white p-2 hover:bg-gray-100 transition-colors"
+              className="cursor-pointer rounded-full bg-white p-2 hover:bg-gray-100 transition-colors hidden lg:block"
             >
               {sidebarOpen ? <ArrowLeftIcon size={20} /> : <Menu size={20} />}
+            </button>
+            <button
+              onClick={() => setMobileSidebarOpen(false)}
+              className="cursor-pointer rounded-full bg-white p-2 hover:bg-gray-100 transition-colors lg:hidden"
+            >
+              <ArrowLeftIcon size={20} />
             </button>
           </div>
 
@@ -125,6 +140,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
                       <Link
                         key={item.name}
                         href={item.href}
+                        onClick={() => setMobileSidebarOpen(false)}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded transition-colors ${
                           active
                             ? " text-teal-500 bg-teal-100/70"
@@ -149,11 +165,21 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
 
         <div
           className={`transition-all duration-300 ${
-            sidebarOpen ? "ml-64" : "ml-20"
+            sidebarOpen ? "lg:ml-64" : "lg:ml-20"
           }`}
         >
-          <header className="sticky top-0 z-30 bg-white h-16 flex items-center justify-between px-8 ">
-            <h1 className="text-2xl font-bold text-gray-900">{pageTitle}</h1>
+          <header className="sticky top-0 z-30 bg-white h-16 flex items-center justify-between px-4 lg:px-8 border-b border-gray-200">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="cursor-pointer lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Menu size={24} />
+              </button>
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                {pageTitle}
+              </h1>
+            </div>
 
             <div className="relative" ref={dropdownRef}>
               <button
@@ -210,7 +236,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
             </div>
           </header>
 
-          <main className="p-8 bg-white">{children}</main>
+          <main className="p-4 lg:p-8 bg-white">{children}</main>
         </div>
       </div>
     </>
