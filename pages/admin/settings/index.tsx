@@ -67,7 +67,7 @@ const SettingsPage = () => {
     <DashboardLayout pageTitle="Settings">
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="w-full lg:w-64 shrink-0">
-          <div className="bg-white rounded-lg border border-gray-200 p-2">
+          <div className="bg-white">
             <div className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -91,7 +91,7 @@ const SettingsPage = () => {
         </div>
 
         <div className="flex-1">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white px-6 py-4 border-l border-teal-300">
             {activeTab === "profile" && (
               <div>
                 <div className="mb-6">
