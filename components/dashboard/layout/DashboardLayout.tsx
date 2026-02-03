@@ -50,7 +50,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
     {
       title: "SYSTEM",
       items: [
-        { name: "Contact Inbox", href: "/admin/contact", icon: Mail },
+        { name: "Inbox", href: "/admin/inbox", icon: Mail },
         { name: "Settings", href: "/admin/settings", icon: Settings },
       ],
     },
@@ -168,7 +168,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
             sidebarOpen ? "lg:ml-64" : "lg:ml-20"
           }`}
         >
-          <header className="sticky top-0 z-30 bg-white h-16 flex items-center justify-between px-4 lg:px-8 border-b border-gray-200">
+          <header className="sticky top-0 z-30 bg-gray-50 h-16 flex items-center justify-between px-4 lg:px-8">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setMobileSidebarOpen(true)}
@@ -236,7 +236,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
             </div>
           </header>
 
-          <main className="p-4 lg:p-8 bg-white">{children}</main>
+          <main className="p-4 lg:p-8 bg-white rounded-tl-4xl">{children}</main>
         </div>
       </div>
     </>
