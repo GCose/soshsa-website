@@ -56,7 +56,12 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
     },
   ];
 
-  const isActive = (href: string) => router.pathname === href;
+  const isActive = (href: string) => {
+    if (href === "/admin/dashboard") {
+      return router.pathname === href;
+    }
+    return router.pathname.startsWith(href);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
