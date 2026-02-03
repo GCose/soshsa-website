@@ -75,7 +75,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
   return (
     <>
       <Head>
-        <title>SoSHSA Admin | {pageTitle}</title>
+        <title>{`SoSHSA Admin | ${pageTitle}`}</title>
       </Head>
       <div className="min-h-screen bg-white">
         {mobileSidebarOpen && (

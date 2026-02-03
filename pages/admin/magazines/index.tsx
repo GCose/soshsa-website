@@ -1,19 +1,20 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import Image from "next/image";
 // import { GetServerSideProps } from "next";
-import Table from "@/components/dashboard/ui/Table";
 import Sheet from "@/components/dashboard/ui/Sheet";
+import Table from "@/components/dashboard/ui/Table";
 import { renderPublishedBadge } from "@/utils/badge";
 import Input from "@/components/dashboard/ui/InputField";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
-import { Plus, Edit, Trash2, FileText } from "lucide-react";
+import { Plus, Edit, Trash2, FileText, Upload } from "lucide-react";
 import { MagazineIssue, TableColumn } from "@/types/interface/dashboard";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
 
 const mockMagazines: MagazineIssue[] = [
   {
-    id: "1",
+    id: "10",
     title: "Issue 12",
     year: "2024",
     articlesCount: 8,
@@ -22,7 +23,7 @@ const mockMagazines: MagazineIssue[] = [
     createdAt: "2024-01-15",
   },
   {
-    id: "2",
+    id: "11",
     title: "Issue 11",
     year: "2024",
     articlesCount: 6,
@@ -31,7 +32,7 @@ const mockMagazines: MagazineIssue[] = [
     createdAt: "2024-01-10",
   },
   {
-    id: "3",
+    id: "12",
     title: "Issue 10",
     year: "2023",
     articlesCount: 0,
@@ -45,9 +46,10 @@ const MagazinePage = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [magazines, setMagazines] = useState(mockMagazines);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [issueSheetOpen, setIssueSheetOpen] = useState(false);
   const [editingIssue, setEditingIssue] = useState<MagazineIssue | null>(null);
-  const [formData, setFormData] = useState({
+  const [coverImagePreview, setCoverImagePreview] = useState("");
+  const [issueFormData, setIssueFormData] = useState({
     title: "",
     year: "",
     isPublished: false,
@@ -63,44 +65,57 @@ const MagazinePage = () => {
   const filteredMagazines = magazines.filter(
     (mag) =>
       mag.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      mag.year.includes(searchQuery)
+      mag.year.includes(searchQuery),
   );
 
-  const handleOpenSheet = (issue?: MagazineIssue) => {
+  const handleOpenIssueSheet = (issue?: MagazineIssue) => {
     if (issue) {
       setEditingIssue(issue);
-      setFormData({
+      setIssueFormData({
         title: issue.title,
         year: issue.year,
         isPublished: issue.isPublished,
       });
     } else {
       setEditingIssue(null);
-      setFormData({
+      setIssueFormData({
         title: "",
         year: new Date().getFullYear().toString(),
         isPublished: false,
       });
+      setCoverImagePreview("");
     }
-    setSheetOpen(true);
+    setIssueSheetOpen(true);
   };
 
-  const handleCloseSheet = () => {
-    setSheetOpen(false);
+  const handleCloseIssueSheet = () => {
+    setIssueSheetOpen(false);
     setEditingIssue(null);
+    setCoverImagePreview("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleIssueSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    handleCloseSheet();
+    console.log("Issue submitted:", issueFormData);
+    handleCloseIssueSheet();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDeleteIssue = (id: string) => {
     setMagazines(magazines.filter((mag) => mag.id !== id));
   };
 
-  const columns: TableColumn<MagazineIssue>[] = [
+  const issueColumns: TableColumn<MagazineIssue>[] = [
     {
       key: "title",
       label: "Issue",
@@ -153,7 +168,7 @@ const MagazinePage = () => {
             <FileText size={16} />
           </button>
           <button
-            onClick={() => handleOpenSheet(row)}
+            onClick={() => handleOpenIssueSheet(row)}
             className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Edit"
           >
@@ -161,7 +176,10 @@ const MagazinePage = () => {
           </button>
           <button
             onClick={() =>
-              setDeleteModal({ isOpen: true, id: value as string })
+              setDeleteModal({
+                isOpen: true,
+                id: value as string,
+              })
             }
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
@@ -183,7 +201,7 @@ const MagazinePage = () => {
             placeholder="Search issues..."
           />
           <button
-            onClick={() => handleOpenSheet()}
+            onClick={() => handleOpenIssueSheet()}
             className="cursor-pointer flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
           >
             <Plus size={20} />
@@ -192,25 +210,67 @@ const MagazinePage = () => {
         </div>
 
         <Table
-          columns={columns}
+          columns={issueColumns}
           data={filteredMagazines}
           emptyMessage="No magazine issues found"
         />
       </div>
 
       <Sheet
-        isOpen={sheetOpen}
-        onClose={handleCloseSheet}
+        isOpen={issueSheetOpen}
+        onClose={handleCloseIssueSheet}
         title={editingIssue ? "Edit Magazine Issue" : "Add Magazine Issue"}
       >
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleIssueSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Cover Image
+            </label>
+            <div className="flex items-start gap-6">
+              {coverImagePreview ? (
+                <div className="w-32 h-48 rounded-lg overflow-hidden bg-gray-200 relative">
+                  <Image
+                    src={coverImagePreview}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="w-32 h-48 rounded-lg bg-gray-100 flex items-center justify-center">
+                  <Upload size={32} className="text-gray-400" />
+                </div>
+              )}
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverImageChange}
+                  className="hidden"
+                  id="cover-upload"
+                />
+                <label
+                  htmlFor="cover-upload"
+                  className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <Upload size={16} />
+                  Upload Cover
+                </label>
+                <p className="text-xs text-gray-500 mt-2">
+                  Recommended: 400x600px
+                </p>
+              </div>
+            </div>
+          </div>
+
           <Input
             label="Issue Title"
             type="text"
             placeholder="e.g., Issue 12"
-            value={formData.title}
+            value={issueFormData.title}
             onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
+              setIssueFormData({ ...issueFormData, title: e.target.value })
             }
             required
           />
@@ -219,23 +279,28 @@ const MagazinePage = () => {
             label="Year"
             type="text"
             placeholder="2024"
-            value={formData.year}
-            onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+            value={issueFormData.year}
+            onChange={(e) =>
+              setIssueFormData({ ...issueFormData, year: e.target.value })
+            }
             required
           />
 
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
-              id="isPublished"
-              checked={formData.isPublished}
+              id="issuePublished"
+              checked={issueFormData.isPublished}
               onChange={(e) =>
-                setFormData({ ...formData, isPublished: e.target.checked })
+                setIssueFormData({
+                  ...issueFormData,
+                  isPublished: e.target.checked,
+                })
               }
               className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
             />
             <label
-              htmlFor="isPublished"
+              htmlFor="issuePublished"
               className="text-sm font-medium text-gray-700"
             >
               Publish issue
@@ -251,7 +316,7 @@ const MagazinePage = () => {
             </button>
             <button
               type="button"
-              onClick={handleCloseSheet}
+              onClick={handleCloseIssueSheet}
               className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancel
@@ -263,7 +328,11 @@ const MagazinePage = () => {
       <ConfirmationModal
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, id: null })}
-        onConfirm={() => deleteModal.id && handleDelete(deleteModal.id)}
+        onConfirm={() => {
+          if (deleteModal.id) {
+            handleDeleteIssue(deleteModal.id);
+          }
+        }}
         title="Delete Magazine Issue"
         message="Are you sure you want to delete this magazine issue? This will also delete all articles within it. This action cannot be undone."
         confirmText="Delete"
