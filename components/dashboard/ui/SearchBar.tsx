@@ -17,7 +17,7 @@ const SearchBar = ({ onSearch, className = "", ...props }: SearchBarProps) => {
         type="text"
         onChange={handleSearch}
         className="
-         w-full pl-8 pr-4 py-2 bg-white border-y border-gray-300
+         w-full pl-8 pr-4 py-2 bg-white border-b border-gray-300
           text-gray-900 placeholder:text-gray-400
           focus:outline-none focus-visible:outline-none
           focus:border-teal-400

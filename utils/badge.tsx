@@ -12,7 +12,7 @@ export const renderStatusBadge = (
 ) => {
   return (
     <span
-      className={`inline-flex px-2.5 py-1 text-xs font-medium rounded  ${
+      className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-lg  ${
         isActive
           ? "bg-green-100 text-green-700 -green-300"
           : "bg-gray-100 text-gray-700 -gray-300"

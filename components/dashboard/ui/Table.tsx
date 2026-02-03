@@ -71,7 +71,7 @@ const Table = <T,>({
                   <tr
                     key={getRowKey(row, index)}
                     onClick={() => onRowClick?.(row)}
-                    className={`even:bg-teal-50/70 ${
+                    className={`border-b border-teal-200 ${
                       onRowClick
                         ? "hover:bg-teal-100/35 cursor-pointer"
                         : ""
