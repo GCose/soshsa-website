@@ -15,7 +15,7 @@ import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModa
 const mockMagazines: MagazineIssue[] = [
   {
     id: "10",
-    title: "Issue 12",
+    title: "Issue 10",
     year: "2024",
     articlesCount: 8,
     isPublished: true,
@@ -33,7 +33,7 @@ const mockMagazines: MagazineIssue[] = [
   },
   {
     id: "12",
-    title: "Issue 10",
+    title: "Issue 12",
     year: "2023",
     articlesCount: 0,
     isPublished: false,
