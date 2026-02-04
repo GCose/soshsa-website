@@ -57,8 +57,12 @@ const ExecutivesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [executives, setExecutives] = useState(mockExecutives);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [editingExecutive, setEditingExecutive] = useState<Executive | null>(
-    null
+    null,
+  );
+  const [viewingExecutive, setViewingExecutive] = useState<Executive | null>(
+    null,
   );
   const [imagePreview, setImagePreview] = useState("");
   const [formData, setFormData] = useState({
@@ -71,8 +75,13 @@ const ExecutivesPage = () => {
   const filteredExecutives = executives.filter(
     (exec) =>
       exec.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      exec.position.toLowerCase().includes(searchQuery.toLowerCase())
+      exec.position.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  const handleView = (executive: Executive) => {
+    setViewingExecutive(executive);
+    setViewSheetOpen(true);
+  };
 
   const handleOpenSheet = (executive?: Executive) => {
     if (executive) {
@@ -112,7 +121,6 @@ const ExecutivesPage = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
     console.log("Form submitted:", formData);
     handleCloseSheet();
   };
@@ -171,14 +179,20 @@ const ExecutivesPage = () => {
       render: (value: string | boolean, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => handleOpenSheet(row)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenSheet(row);
+            }}
             className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Edit"
           >
             <Edit size={16} />
           </button>
           <button
-            onClick={() => handleDelete(value as string)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(value as string);
+            }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
@@ -211,8 +225,89 @@ const ExecutivesPage = () => {
           columns={columns}
           data={filteredExecutives}
           emptyMessage="No executives found"
+          onRowClick={handleView}
         />
       </div>
+
+      <Sheet
+        isOpen={viewSheetOpen}
+        onClose={() => setViewSheetOpen(false)}
+        title="Executive Details"
+      >
+        {viewingExecutive && (
+          <div className="space-y-6">
+            <div className="flex justify-center">
+              <div className="w-52 h-52 rounded-full overflow-hidden bg-gray-200 relative">
+                <Image
+                  src={viewingExecutive.image}
+                  alt={viewingExecutive.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Name
+                </label>
+                <p className="text-gray-900 font-medium text-lg">
+                  {viewingExecutive.name}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Position
+                </label>
+                <p className="text-gray-900">{viewingExecutive.position}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Status
+                </label>
+                {renderStatusBadge(viewingExecutive.isActive)}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Date Added
+                </label>
+                <p className="text-gray-900">
+                  {new Date(viewingExecutive.createdAt).toLocaleDateString(
+                    "en-GB",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    },
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setViewSheetOpen(false);
+                  handleOpenSheet(viewingExecutive);
+                }}
+                className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => setViewSheetOpen(false)}
+                className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Sheet>
 
       <Sheet
         isOpen={sheetOpen}
@@ -222,42 +317,30 @@ const ExecutivesPage = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Photo
+              Profile Photo
             </label>
             <div className="flex items-start gap-6">
-              {imagePreview ? (
+              {imagePreview && (
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200 relative">
                   <Image
                     src={imagePreview}
                     alt="Preview"
                     fill
                     className="object-cover"
-                    unoptimized
                   />
                 </div>
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
-                  <Upload size={32} className="text-gray-400" />
-                </div>
               )}
-              <div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                  id="image-upload"
-                />
-                <label
-                  htmlFor="image-upload"
-                  className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <Upload size={16} />
-                  Upload Photo
+              <div className="flex-1">
+                <label className="cursor-pointer flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary transition-colors">
+                  <Upload size={20} className="text-gray-400" />
+                  <span className="text-sm text-gray-600">Upload Photo</span>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                  />
                 </label>
-                <p className="text-xs text-gray-500 mt-2">
-                  JPG, PNG or WEBP. Max 5MB.
-                </p>
               </div>
             </div>
           </div>
@@ -265,7 +348,6 @@ const ExecutivesPage = () => {
           <Input
             label="Full Name"
             type="text"
-            placeholder="Enter full name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
@@ -274,7 +356,6 @@ const ExecutivesPage = () => {
           <Input
             label="Position"
             type="text"
-            placeholder="e.g., President, Vice President"
             value={formData.position}
             onChange={(e) =>
               setFormData({ ...formData, position: e.target.value })
@@ -291,9 +372,9 @@ const ExecutivesPage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, biography: e.target.value })
               }
-              rows={5}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              placeholder="Write a brief biography..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Brief biography..."
             />
           </div>
 
@@ -311,7 +392,7 @@ const ExecutivesPage = () => {
               htmlFor="isActive"
               className="text-sm font-medium text-gray-700"
             >
-              Active (show on website)
+              Active (currently serving)
             </label>
           </div>
 

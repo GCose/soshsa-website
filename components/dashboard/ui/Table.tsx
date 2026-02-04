@@ -73,11 +73,14 @@ const Table = <T,>({
                     onClick={() => onRowClick?.(row)}
                     className={`border-b border-teal-200 ${
                       onRowClick
-                        ? "hover:bg-teal-100/35 cursor-pointer"
+                        ? "hover:bg-teal-100/35 active:bg-teal-100/50 cursor-pointer"
                         : ""
                     } transition-colors`}
+                    style={{
+                      touchAction: onRowClick ? "manipulation" : undefined,
+                    }}
                   >
-                    {columns.map((column) => (  
+                    {columns.map((column) => (
                       <td
                         key={column.key}
                         className="py-4 px-6 text-gray-400 truncate max-w-xs"
@@ -97,9 +100,7 @@ const Table = <T,>({
 
       {pagination && pagination.totalPages > 0 && (
         <div className="flex items-center justify-between mt-4">
-          <p className="text-sm  /60">
-            {getShowingText()}
-          </p>
+          <p className="text-sm  /60">{getShowingText()}</p>
           {pagination.totalPages > 1 && (
             <div className="flex gap-2">
               <button

@@ -1,8 +1,8 @@
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
+import { useState, useRef, useEffect } from "react";
 import {
   Mail,
   Menu,
@@ -22,7 +22,13 @@ import {
 import { DashboardLayoutProps } from "@/types/interface/dashboard";
 
 const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sidebarOpen");
+      return saved !== null ? saved === "true" : true;
+    }
+    return true;
+  });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -64,6 +70,10 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
   };
 
   useEffect(() => {
+    localStorage.setItem("sidebarOpen", sidebarOpen.toString());
+  }, [sidebarOpen]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
@@ -80,7 +90,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
   return (
     <>
       <Head>
-        <title>{`SoSHSA Admin | ${pageTitle}`}</title>
+        <title>SoSHSA Admin | {pageTitle}</title>
       </Head>
       <div className="min-h-screen bg-white">
         {mobileSidebarOpen && (
@@ -103,7 +113,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
                   <Image
                     fill
                     priority
-                    alt="SOSHSHA Logo"
+                    alt="SOSHSA Logo"
                     src="/images/logo.jpeg"
                     className="object-contain"
                   />
@@ -148,7 +158,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
                         onClick={() => setMobileSidebarOpen(false)}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded transition-colors ${
                           active
-                            ? " text-teal-500 bg-teal-100/70"
+                            ? "text-teal-500 bg-teal-100/70"
                             : "text-gray-700 hover:bg-gray-100"
                         } ${!sidebarOpen && "justify-center"}`}
                         title={!sidebarOpen ? item.name : ""}
@@ -241,7 +251,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
             </div>
           </header>
 
-          <main className="p-4 lg:p-8 bg-white rounded-tl-4xl">{children}</main>
+          <main className="p-4 lg:p-8 bg-white">{children}</main>
         </div>
       </div>
     </>
