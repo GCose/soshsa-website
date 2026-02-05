@@ -145,3 +145,12 @@ export interface NewsArticle {
     publishedAt: string;
     createdAt: string;
 }
+
+export interface Article {
+    id: string;
+    title: string;
+    author: string;
+    content: string;
+    isPublished: boolean;
+    createdAt: string;
+}

@@ -1,26 +1,17 @@
+import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/router";
-import Image from "next/image";
-import Link from "next/link";
 // import { GetServerSideProps } from "next";
+import Sheet from "@/components/dashboard/ui/Sheet";
 import Table from "@/components/dashboard/ui/Table";
 import { renderPublishedBadge } from "@/utils/badge";
-import Sheet from "@/components/dashboard/ui/Sheet";
 import Input from "@/components/dashboard/ui/InputField";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
-import { TableColumn } from "@/types/interface/dashboard";
+import { Article, TableColumn } from "@/types/interface/dashboard";
 import { Plus, Edit, Trash2, ArrowLeft, Upload } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
-
-interface Article {
-  id: string;
-  title: string;
-  author: string;
-  content: string;
-  isPublished: boolean;
-  createdAt: string;
-}
 
 const mockArticles: Article[] = [
   {

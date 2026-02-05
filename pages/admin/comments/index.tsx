@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, X } from "lucide-react";
 // import { GetServerSideProps } from "next";
 import Table from "@/components/dashboard/ui/Table";
+import Sheet from "@/components/dashboard/ui/Sheet";
 import { renderApprovedBadge } from "@/utils/badge";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
 import { TableColumn, Comment } from "@/types/interface/dashboard";
@@ -44,6 +45,8 @@ const CommentsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending");
   const [comments, setComments] = useState(mockComments);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
+  const [viewingComment, setViewingComment] = useState<Comment | null>(null);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     id: string | null;
@@ -66,16 +69,22 @@ const CommentsPage = () => {
     return matchesSearch && matchesFilter;
   });
 
+  const handleView = (comment: Comment) => {
+    setViewingComment(comment);
+    setViewSheetOpen(true);
+  };
+
   const handleApprove = (id: string) => {
     setComments(
       comments.map((comment) =>
-        comment.id === id ? { ...comment, isApproved: true } : comment
-      )
+        comment.id === id ? { ...comment, isApproved: true } : comment,
+      ),
     );
   };
 
   const handleDelete = (id: string) => {
     setComments(comments.filter((comment) => comment.id !== id));
+    setDeleteModal({ isOpen: false, id: null });
   };
 
   const columns: TableColumn<Comment>[] = [
@@ -124,7 +133,10 @@ const CommentsPage = () => {
         <div className="flex items-center gap-2">
           {!row.isApproved && (
             <button
-              onClick={() => handleApprove(value as string)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleApprove(value as string);
+              }}
               className="cursor-pointer p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
               title="Approve"
             >
@@ -132,9 +144,10 @@ const CommentsPage = () => {
             </button>
           )}
           <button
-            onClick={() =>
-              setDeleteModal({ isOpen: true, id: value as string })
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteModal({ isOpen: true, id: value as string });
+            }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
@@ -193,8 +206,94 @@ const CommentsPage = () => {
           columns={columns}
           data={filteredComments}
           emptyMessage="No comments found"
+          onRowClick={handleView}
         />
       </div>
+
+      <Sheet
+        isOpen={viewSheetOpen}
+        onClose={() => setViewSheetOpen(false)}
+        title="Comment Details"
+      >
+        {viewingComment && (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Author
+                </label>
+                <p className="text-gray-900 font-medium">
+                  {viewingComment.author}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Email
+                </label>
+                <p className="text-gray-900">{viewingComment.email}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Article
+                </label>
+                <p className="text-gray-900">{viewingComment.articleTitle}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Comment
+                </label>
+                <p className="text-gray-900">{viewingComment.content}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Status
+                </label>
+                {renderApprovedBadge(viewingComment.isApproved)}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Date
+                </label>
+                <p className="text-gray-900">
+                  {new Date(viewingComment.createdAt).toLocaleDateString(
+                    "en-GB",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    },
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              {!viewingComment.isApproved && (
+                <button
+                  onClick={() => {
+                    handleApprove(viewingComment.id);
+                    setViewSheetOpen(false);
+                  }}
+                  className="cursor-pointer flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                >
+                  Approve
+                </button>
+              )}
+              <button
+                onClick={() => setViewSheetOpen(false)}
+                className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Sheet>
 
       <ConfirmationModal
         isOpen={deleteModal.isOpen}

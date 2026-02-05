@@ -1,26 +1,15 @@
-import { useState } from "react";
 import Image from "next/image";
+import { useState } from "react";
 // import { GetServerSideProps } from "next";
-import { useRouter } from "next/router";
 import Table from "@/components/dashboard/ui/Table";
 import Sheet from "@/components/dashboard/ui/Sheet";
 import { renderPublishedBadge } from "@/utils/badge";
 import Input from "@/components/dashboard/ui/InputField";
-import { TableColumn } from "@/types/interface/dashboard";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
-import { Plus, Edit, Trash2, Eye, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Upload } from "lucide-react";
+import { NewsArticle, TableColumn } from "@/types/interface/dashboard";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
-
-interface NewsArticle {
-  id: string;
-  title: string;
-  excerpt: string;
-  author: string;
-  isPublished: boolean;
-  publishedAt: string;
-  createdAt: string;
-}
 
 const mockNews: NewsArticle[] = [
   {
@@ -58,13 +47,16 @@ const mockNews: NewsArticle[] = [
 type FilterStatus = "all" | "published" | "draft";
 
 const NewsPage = () => {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [news, setNews] = useState(mockNews);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(
-    null
+    null,
+  );
+  const [viewingArticle, setViewingArticle] = useState<NewsArticle | null>(
+    null,
   );
   const [imagePreview, setImagePreview] = useState("");
   const [formData, setFormData] = useState({
@@ -95,6 +87,11 @@ const NewsPage = () => {
 
     return matchesSearch && matchesFilter;
   });
+
+  const handleView = (article: NewsArticle) => {
+    setViewingArticle(article);
+    setViewSheetOpen(true);
+  };
 
   const handleOpenSheet = (article?: NewsArticle) => {
     if (article) {
@@ -145,6 +142,7 @@ const NewsPage = () => {
 
   const handleDelete = (id: string) => {
     setNews(news.filter((article) => article.id !== id));
+    setDeleteModal({ isOpen: false, id: null });
   };
 
   const columns: TableColumn<NewsArticle>[] = [
@@ -184,23 +182,20 @@ const NewsPage = () => {
       render: (value: string | boolean, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => router.push(`/news/${value}`)}
-            className="cursor-pointer p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-            title="View"
-          >
-            <Eye size={16} />
-          </button>
-          <button
-            onClick={() => handleOpenSheet(row)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenSheet(row);
+            }}
             className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Edit"
           >
             <Edit size={16} />
           </button>
           <button
-            onClick={() =>
-              setDeleteModal({ isOpen: true, id: value as string })
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteModal({ isOpen: true, id: value as string });
+            }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
@@ -270,9 +265,88 @@ const NewsPage = () => {
         <Table
           columns={columns}
           data={filteredNews}
+          onRowClick={handleView}
           emptyMessage="No news articles found"
         />
       </div>
+
+      <Sheet
+        isOpen={viewSheetOpen}
+        onClose={() => setViewSheetOpen(false)}
+        title="News Article Details"
+      >
+        {viewingArticle && (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Title
+                </label>
+                <p className="text-gray-900 font-medium text-lg">
+                  {viewingArticle.title}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Excerpt
+                </label>
+                <p className="text-gray-900">{viewingArticle.excerpt}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Author
+                </label>
+                <p className="text-gray-900">{viewingArticle.author}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Status
+                </label>
+                {renderPublishedBadge(viewingArticle.isPublished)}
+              </div>
+
+              {viewingArticle.publishedAt && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Published Date
+                  </label>
+                  <p className="text-gray-900">
+                    {new Date(viewingArticle.publishedAt).toLocaleDateString(
+                      "en-GB",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      },
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setViewSheetOpen(false);
+                  handleOpenSheet(viewingArticle);
+                }}
+                className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => setViewSheetOpen(false)}
+                className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Sheet>
 
       <Sheet
         isOpen={sheetOpen}

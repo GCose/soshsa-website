@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useRouter } from "next/router";
 import Image from "next/image";
 // import { GetServerSideProps } from "next";
 import Sheet from "@/components/dashboard/ui/Sheet";
@@ -7,9 +6,10 @@ import Table from "@/components/dashboard/ui/Table";
 import Input from "@/components/dashboard/ui/InputField";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
 import { TableColumn, Event } from "@/types/interface/dashboard";
-import { Plus, Edit, Trash2, Eye, Star, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Star, Upload } from "lucide-react";
 import { renderPublishedBadge, renderTypeBadge } from "@/utils/badge";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
+import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
 
 const mockEvents: Event[] = [
   {
@@ -57,12 +57,13 @@ const mockEvents: Event[] = [
 type FilterStatus = "all" | "published" | "draft";
 
 const EventsPage = () => {
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [events, setEvents] = useState(mockEvents);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [viewingEvent, setViewingEvent] = useState<Event | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [formData, setFormData] = useState({
     title: "",
@@ -72,6 +73,13 @@ const EventsPage = () => {
     description: "",
     isFeatured: false,
     isPublished: true,
+  });
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    id: string | null;
+  }>({
+    isOpen: false,
+    id: null,
   });
 
   const filteredEvents = events.filter((event) => {
@@ -87,6 +95,11 @@ const EventsPage = () => {
 
     return matchesSearch && matchesFilter;
   });
+
+  const handleView = (event: Event) => {
+    setViewingEvent(event);
+    setViewSheetOpen(true);
+  };
 
   const handleOpenSheet = (event?: Event) => {
     if (event) {
@@ -140,9 +153,8 @@ const EventsPage = () => {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this event?")) {
-      setEvents(events.filter((event) => event.id !== id));
-    }
+    setEvents(events.filter((event) => event.id !== id));
+    setDeleteModal({ isOpen: false, id: null });
   };
 
   const columns: TableColumn<Event>[] = [
@@ -190,21 +202,20 @@ const EventsPage = () => {
       render: (value: string | boolean, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => router.push(`/events/${value}`)}
-            className="cursor-pointer p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-            title="View"
-          >
-            <Eye size={16} />
-          </button>
-          <button
-            onClick={() => handleOpenSheet(row)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenSheet(row);
+            }}
             className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Edit"
           >
             <Edit size={16} />
           </button>
           <button
-            onClick={() => handleDelete(value as string)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteModal({ isOpen: true, id: value as string });
+            }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
@@ -276,8 +287,88 @@ const EventsPage = () => {
           columns={columns}
           data={filteredEvents}
           emptyMessage="No events found"
+          onRowClick={handleView}
         />
       </div>
+
+      <Sheet
+        isOpen={viewSheetOpen}
+        onClose={() => setViewSheetOpen(false)}
+        title="Event Details"
+      >
+        {viewingEvent && (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Event Title
+                </label>
+                <p className="text-gray-900 font-medium text-lg">
+                  {viewingEvent.title}
+                  {viewingEvent.isFeatured && (
+                    <Star
+                      size={16}
+                      className="inline ml-2 text-yellow-500 fill-yellow-500"
+                    />
+                  )}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Type
+                </label>
+                {renderTypeBadge(viewingEvent.type)}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Date
+                </label>
+                <p className="text-gray-900">
+                  {new Date(viewingEvent.date).toLocaleDateString("en-GB", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Location
+                </label>
+                <p className="text-gray-900">{viewingEvent.location}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Status
+                </label>
+                {renderPublishedBadge(viewingEvent.isPublished)}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setViewSheetOpen(false);
+                  handleOpenSheet(viewingEvent);
+                }}
+                className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => setViewSheetOpen(false)}
+                className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Sheet>
 
       <Sheet
         isOpen={sheetOpen}
@@ -453,6 +544,16 @@ const EventsPage = () => {
           </div>
         </form>
       </Sheet>
+
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, id: null })}
+        onConfirm={() => deleteModal.id && handleDelete(deleteModal.id)}
+        title="Delete Event"
+        message="Are you sure you want to delete this event? This action cannot be undone."
+        confirmText="Delete"
+        type="danger"
+      />
     </DashboardLayout>
   );
 };

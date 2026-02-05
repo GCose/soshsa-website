@@ -1,12 +1,12 @@
 import { useState } from "react";
-// import { GetServerSideProps } from "next";=
+// import { GetServerSideProps } from "next";
 import { renderStatusBadge } from "@/utils/badge";
 import Sheet from "@/components/dashboard/ui/Sheet";
 import Table from "@/components/dashboard/ui/Table";
 import Input from "@/components/dashboard/ui/InputField";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
-import { Plus, Edit, Trash2, Download, Upload } from "lucide-react";
 import { Course, TableColumn } from "@/types/interface/dashboard";
+import { Plus, Edit, Trash2, Download, Upload } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
 
@@ -47,7 +47,9 @@ const CoursesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [courses, setCourses] = useState(mockCourses);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [viewingCourse, setViewingCourse] = useState<Course | null>(null);
   const [formData, setFormData] = useState({
     code: "",
     title: "",
@@ -68,8 +70,13 @@ const CoursesPage = () => {
     (course) =>
       course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.department.toLowerCase().includes(searchQuery.toLowerCase())
+      course.department.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  const handleView = (course: Course) => {
+    setViewingCourse(course);
+    setViewSheetOpen(true);
+  };
 
   const handleOpenSheet = (course?: Course) => {
     if (course) {
@@ -109,6 +116,7 @@ const CoursesPage = () => {
 
   const handleDelete = (id: string) => {
     setCourses(courses.filter((course) => course.id !== id));
+    setDeleteModal({ isOpen: false, id: null });
   };
 
   const columns: TableColumn<Course>[] = [
@@ -148,14 +156,18 @@ const CoursesPage = () => {
       render: (value: string | boolean | number) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => console.log("Download brochure for", value)}
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log("Download brochure for", value);
+            }}
             className="cursor-pointer p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
             title="Download Brochure"
           >
             <Download size={16} />
           </button>
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               const course = courses.find((c) => c.id === value);
               if (course) handleOpenSheet(course);
             }}
@@ -165,9 +177,10 @@ const CoursesPage = () => {
             <Edit size={16} />
           </button>
           <button
-            onClick={() =>
-              setDeleteModal({ isOpen: true, id: value as string })
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteModal({ isOpen: true, id: value as string });
+            }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
@@ -200,8 +213,85 @@ const CoursesPage = () => {
           columns={columns}
           data={filteredCourses}
           emptyMessage="No courses found"
+          onRowClick={handleView}
         />
       </div>
+
+      <Sheet
+        isOpen={viewSheetOpen}
+        onClose={() => setViewSheetOpen(false)}
+        title="Course Details"
+      >
+        {viewingCourse && (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Course Code
+                </label>
+                <p className="text-gray-900 font-medium text-lg">
+                  {viewingCourse.code}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Course Title
+                </label>
+                <p className="text-gray-900">{viewingCourse.title}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Department
+                </label>
+                <p className="text-gray-900">{viewingCourse.department}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Year
+                  </label>
+                  <p className="text-gray-900">Year {viewingCourse.year}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Credit Hours
+                  </label>
+                  <p className="text-gray-900">{viewingCourse.creditHours}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Status
+                </label>
+                {renderStatusBadge(viewingCourse.isActive)}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setViewSheetOpen(false);
+                  handleOpenSheet(viewingCourse);
+                }}
+                className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => setViewSheetOpen(false)}
+                className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Sheet>
 
       <Sheet
         isOpen={sheetOpen}
