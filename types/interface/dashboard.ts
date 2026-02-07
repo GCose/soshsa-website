@@ -154,3 +154,54 @@ export interface Article {
     isPublished: boolean;
     createdAt: string;
 }
+
+export interface PortalGuideSection {
+    id: string;
+    heading: string;
+    body: string;
+    image: string | null;
+    order: number;
+}
+
+export interface PortalGuide {
+    id: string;
+    title: string;
+    sections: PortalGuideSection[];
+    isPublished: boolean;
+    updatedAt: string;
+}
+
+export interface AssociationIntro {
+    id: string;
+    videoUrl: string;
+    title: string;
+    description: string;
+    images: string[];
+    isPublished: boolean;
+    updatedAt: string;
+}
+
+export interface CitationFile {
+    id: string;
+    title: string;
+    description: string;
+    file: string;
+    fileUrl: string;
+    format: "PDF" | "DOCX" | "MP4";
+    size: number;
+    category: "APA" | "MLA" | "Chicago" | "Tutorial" | "Other";
+    downloads: number;
+    createdAt: string;
+}
+
+export interface SiteSettings {
+    id: string;
+    officialEmail: string;
+    facebookUrl: string;
+    instagramUrl: string;
+    twitterUrl: string;
+    whatsappUrl: string;
+    physicalAddress: string;
+    officeHours: string;
+    updatedAt: string;
+}

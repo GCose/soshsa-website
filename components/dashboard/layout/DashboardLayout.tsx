@@ -18,6 +18,9 @@ import {
   ArrowLeftIcon,
   ChevronDown,
   User,
+  Video,
+  FileText,
+  Download,
 } from "lucide-react";
 import { DashboardLayoutProps } from "@/types/interface/dashboard";
 
@@ -49,8 +52,41 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
         { name: "News", href: "/admin/news", icon: BookOpen },
         { name: "Magazine", href: "/admin/magazines", icon: BookOpen },
         { name: "Comments", href: "/admin/comments", icon: MessageSquare },
-        { name: "Courses", href: "/admin/courses", icon: GraduationCap },
-        { name: "Resources", href: "/admin/resources", icon: LinkIcon },
+      ],
+    },
+    {
+      title: "INDUCTION",
+      items: [
+        {
+          name: "Courses",
+          href: "/admin/induction/courses",
+          icon: GraduationCap,
+        },
+        {
+          name: "Portal Guide",
+          href: "/admin/induction/portal-guide",
+          icon: FileText,
+        },
+        {
+          name: "Association Intro",
+          href: "/admin/induction/intro",
+          icon: Video,
+        },
+      ],
+    },
+    {
+      title: "RESOURCES",
+      items: [
+        {
+          name: "Citation Files",
+          href: "/admin/resources/citations",
+          icon: Download,
+        },
+        {
+          name: "Useful Links",
+          href: "/admin/resources/links",
+          icon: LinkIcon,
+        },
       ],
     },
     {
