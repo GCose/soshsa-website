@@ -1,14 +1,29 @@
 import Image from "next/image";
 import { useState } from "react";
-// import { GetServerSideProps } from "next";
 import { renderStatusBadge } from "@/utils/badge";
 import Sheet from "@/components/dashboard/ui/Sheet";
 import Table from "@/components/dashboard/ui/Table";
 import Input from "@/components/dashboard/ui/InputField";
-import { Plus, Edit, Trash2, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Upload, Settings } from "lucide-react";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
-import { Executive, TableColumn } from "@/types/interface/dashboard";
+import { Council, Executive, TableColumn } from "@/types/interface/dashboard";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
+import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
+
+const mockCouncils: Council[] = [
+  {
+    id: "1",
+    name: "20th Executive Members",
+    isActive: true,
+    createdAt: "2024-01-01",
+  },
+  {
+    id: "2",
+    name: "19th Executive Members",
+    isActive: false,
+    createdAt: "2023-01-01",
+  },
+];
 
 const mockExecutives: Executive[] = [
   {
@@ -17,6 +32,8 @@ const mockExecutives: Executive[] = [
     position: "President",
     image: "/images/about/exec-1.jpg",
     isActive: true,
+    councilId: "1",
+    councilName: "20th Executive Members",
     createdAt: "2024-01-15",
   },
   {
@@ -25,6 +42,8 @@ const mockExecutives: Executive[] = [
     position: "Vice President",
     image: "/images/about/exec-2.jpg",
     isActive: true,
+    councilId: "1",
+    councilName: "20th Executive Members",
     createdAt: "2024-01-14",
   },
   {
@@ -33,6 +52,8 @@ const mockExecutives: Executive[] = [
     position: "Secretary General",
     image: "/images/about/exec-3.jpg",
     isActive: true,
+    councilId: "1",
+    councilName: "20th Executive Members",
     createdAt: "2024-01-13",
   },
   {
@@ -41,6 +62,8 @@ const mockExecutives: Executive[] = [
     position: "Treasurer",
     image: "/images/about/exec-4.jpg",
     isActive: true,
+    councilId: "1",
+    councilName: "20th Executive Members",
     createdAt: "2024-01-12",
   },
   {
@@ -49,15 +72,19 @@ const mockExecutives: Executive[] = [
     position: "Public Relations Officer",
     image: "/images/about/exec-5.jpg",
     isActive: false,
+    councilId: "2",
+    councilName: "19th Executive Members",
     createdAt: "2024-01-11",
   },
 ];
 
-const ExecutivesPage = () => {
+const CouncilsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [councils, setCouncils] = useState(mockCouncils);
   const [executives, setExecutives] = useState(mockExecutives);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
+  const [councilSheetOpen, setCouncilSheetOpen] = useState(false);
   const [editingExecutive, setEditingExecutive] = useState<Executive | null>(
     null,
   );
@@ -69,13 +96,28 @@ const ExecutivesPage = () => {
     name: "",
     position: "",
     biography: "",
+    councilId: "",
     isActive: true,
+  });
+  const [councilFormData, setCouncilFormData] = useState({
+    name: "",
+  });
+  const [editingCouncil, setEditingCouncil] = useState<Council | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    id: string | null;
+    type: "executive" | "council";
+  }>({
+    isOpen: false,
+    id: null,
+    type: "executive",
   });
 
   const filteredExecutives = executives.filter(
     (exec) =>
       exec.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      exec.position.toLowerCase().includes(searchQuery.toLowerCase()),
+      exec.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      exec.councilName?.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleView = (executive: Executive) => {
@@ -90,12 +132,19 @@ const ExecutivesPage = () => {
         name: executive.name,
         position: executive.position,
         biography: "",
+        councilId: executive.councilId || "",
         isActive: executive.isActive,
       });
       setImagePreview(executive.image);
     } else {
       setEditingExecutive(null);
-      setFormData({ name: "", position: "", biography: "", isActive: true });
+      setFormData({
+        name: "",
+        position: "",
+        biography: "",
+        councilId: "",
+        isActive: true,
+      });
       setImagePreview("");
     }
     setSheetOpen(true);
@@ -104,7 +153,13 @@ const ExecutivesPage = () => {
   const handleCloseSheet = () => {
     setSheetOpen(false);
     setEditingExecutive(null);
-    setFormData({ name: "", position: "", biography: "", isActive: true });
+    setFormData({
+      name: "",
+      position: "",
+      biography: "",
+      councilId: "",
+      isActive: true,
+    });
     setImagePreview("");
   };
 
@@ -125,17 +180,69 @@ const ExecutivesPage = () => {
     handleCloseSheet();
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this executive?")) {
+  const handleDelete = (id: string, type: "executive" | "council") => {
+    if (type === "executive") {
       setExecutives(executives.filter((exec) => exec.id !== id));
+    } else {
+      setCouncils(councils.filter((council) => council.id !== id));
     }
+    setDeleteModal({ isOpen: false, id: null, type: "executive" });
+  };
+
+  const handleOpenCouncilSheet = (council?: Council) => {
+    if (council) {
+      setEditingCouncil(council);
+      setCouncilFormData({ name: council.name });
+    } else {
+      setEditingCouncil(null);
+      setCouncilFormData({ name: "" });
+    }
+    setCouncilSheetOpen(true);
+  };
+
+  const handleCloseCouncilSheet = () => {
+    setCouncilSheetOpen(false);
+    setEditingCouncil(null);
+    setCouncilFormData({ name: "" });
+  };
+
+  const handleCouncilSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingCouncil) {
+      setCouncils(
+        councils.map((council) =>
+          council.id === editingCouncil.id
+            ? { ...council, name: councilFormData.name }
+            : council,
+        ),
+      );
+    } else {
+      const newCouncil: Council = {
+        id: Date.now().toString(),
+        name: councilFormData.name,
+        isActive: false,
+        createdAt: new Date().toISOString(),
+      };
+      setCouncils([...councils, newCouncil]);
+    }
+    handleCloseCouncilSheet();
+  };
+
+  const handleToggleActiveCouncil = (id: string) => {
+    setCouncils(
+      councils.map((council) =>
+        council.id === id
+          ? { ...council, isActive: true }
+          : { ...council, isActive: false },
+      ),
+    );
   };
 
   const columns: TableColumn<Executive>[] = [
     {
       key: "image",
       label: "Photo",
-      render: (value: string | boolean, row) => (
+      render: (value: string | boolean | undefined, row) => (
         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 relative">
           <Image
             src={value as string}
@@ -149,7 +256,7 @@ const ExecutivesPage = () => {
     {
       key: "name",
       label: "Name",
-      render: (value: string | boolean) => (
+      render: (value: string | boolean | undefined) => (
         <span className="font-medium text-gray-900">{value}</span>
       ),
     },
@@ -158,14 +265,21 @@ const ExecutivesPage = () => {
       label: "Position",
     },
     {
+      key: "councilName",
+      label: "Council",
+      render: (value: string | boolean | undefined) => (
+        <span className="text-sm text-gray-600">{value}</span>
+      ),
+    },
+    {
       key: "isActive",
       label: "Status",
-      render: (value: string | boolean) => renderStatusBadge(value as boolean),
+      render: (value: string | boolean | undefined) => renderStatusBadge(value as boolean),
     },
     {
       key: "createdAt",
       label: "Date Added",
-      render: (value: string | boolean) =>
+      render: (value: string | boolean | undefined) =>
         new Date(value as string).toLocaleDateString("en-GB", {
           year: "numeric",
           month: "2-digit",
@@ -176,7 +290,7 @@ const ExecutivesPage = () => {
     {
       key: "id",
       label: "Actions",
-      render: (value: string | boolean, row) => (
+      render: (value: string | boolean | undefined, row) => (
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
@@ -191,7 +305,11 @@ const ExecutivesPage = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(value as string);
+              setDeleteModal({
+                isOpen: true,
+                id: value as string,
+                type: "executive",
+              });
             }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
@@ -204,21 +322,30 @@ const ExecutivesPage = () => {
   ];
 
   return (
-    <DashboardLayout pageTitle="Executives">
+    <DashboardLayout pageTitle="Councils">
       <div className="space-y-10">
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           <SearchBar
-            placeholder="Search by name or position..."
+            placeholder="Search by name, position, or council..."
             onSearch={setSearchQuery}
             className="max-w-lg"
           />
-          <button
-            onClick={() => handleOpenSheet()}
-            className="cursor-pointer flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={20} />
-            Add Executive
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setCouncilSheetOpen(true)}
+              className="cursor-pointer flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              <Settings size={20} />
+              Manage Councils
+            </button>
+            <button
+              onClick={() => handleOpenSheet()}
+              className="cursor-pointer flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Plus size={20} />
+              Add Executive
+            </button>
+          </div>
         </div>
 
         <Table
@@ -262,6 +389,13 @@ const ExecutivesPage = () => {
                   Position
                 </label>
                 <p className="text-gray-900">{viewingExecutive.position}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Council
+                </label>
+                <p className="text-gray-900">{viewingExecutive.councilName}</p>
               </div>
 
               <div>
@@ -365,6 +499,28 @@ const ExecutivesPage = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Council
+              <span className="text-red-500 ml-1">*</span>
+            </label>
+            <select
+              value={formData.councilId}
+              onChange={(e) =>
+                setFormData({ ...formData, councilId: e.target.value })
+              }
+              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+              required
+            >
+              <option value="">Select a council</option>
+              {councils.map((council) => (
+                <option key={council.id} value={council.id}>
+                  {council.name} {council.isActive && "(Active)"}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Biography
             </label>
             <textarea
@@ -413,25 +569,133 @@ const ExecutivesPage = () => {
           </div>
         </form>
       </Sheet>
+
+      <Sheet
+        isOpen={councilSheetOpen}
+        onClose={() => {
+          if (!editingCouncil) {
+            setCouncilSheetOpen(false);
+          } else {
+            handleCloseCouncilSheet();
+          }
+        }}
+        title="Manage Councils"
+      >
+        {!editingCouncil ? (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900">All Councils</h3>
+              <button
+                onClick={() => handleOpenCouncilSheet()}
+                className="cursor-pointer flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors text-sm"
+              >
+                <Plus size={16} />
+                Add Council
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {councils.length === 0 ? (
+                <p className="text-center py-8 text-gray-500">
+                  No councils created yet
+                </p>
+              ) : (
+                councils.map((council) => (
+                  <div
+                    key={council.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">
+                        {council.name}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Created{" "}
+                        {new Date(council.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleToggleActiveCouncil(council.id)}
+                        className={`px-3 py-1.5 text-xs font-medium rounded ${
+                          council.isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                        }`}
+                      >
+                        {council.isActive ? "Active" : "Set Active"}
+                      </button>
+                      <button
+                        onClick={() => handleOpenCouncilSheet(council)}
+                        className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Edit"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() =>
+                          setDeleteModal({
+                            isOpen: true,
+                            id: council.id,
+                            type: "council",
+                          })
+                        }
+                        className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleCouncilSubmit} className="space-y-6">
+            <Input
+              label="Council Name"
+              type="text"
+              placeholder="e.g., 21st Executive Members"
+              value={councilFormData.name}
+              onChange={(e) => setCouncilFormData({ name: e.target.value })}
+              required
+            />
+
+            <div className="flex gap-4 pt-4">
+              <button
+                type="submit"
+                className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              >
+                {editingCouncil ? "Update Council" : "Add Council"}
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseCouncilSheet}
+                className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+      </Sheet>
+
+      <ConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() =>
+          setDeleteModal({ isOpen: false, id: null, type: "executive" })
+        }
+        onConfirm={() =>
+          deleteModal.id && handleDelete(deleteModal.id, deleteModal.type)
+        }
+        title={`Delete ${deleteModal.type === "executive" ? "Executive" : "Council"}`}
+        message={`Are you sure you want to delete this ${deleteModal.type}? This action cannot be undone.`}
+        confirmText="Delete"
+        type="danger"
+      />
     </DashboardLayout>
   );
 };
 
-// export const getServerSideProps: GetServerSideProps = async (context) => {
-//   const token = context.req.cookies.token || null;
-
-//   if (!token) {
-//     return {
-//       redirect: {
-//         destination: "/admin/auth/sign-in",
-//         permanent: false,
-//       },
-//     };
-//   }
-
-//   return {
-//     props: {},
-//   };
-// };
-
-export default ExecutivesPage;
+export default CouncilsPage;

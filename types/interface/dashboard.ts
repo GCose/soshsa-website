@@ -71,7 +71,17 @@ export interface Executive {
     id: string;
     name: string;
     position: string;
+    biography?: string;
     image: string;
+    isActive: boolean;
+    councilId: string;
+    councilName?: string;  
+    createdAt: string;
+}
+
+export interface Council {
+    id: string;
+    name: string;
     isActive: boolean;
     createdAt: string;
 }

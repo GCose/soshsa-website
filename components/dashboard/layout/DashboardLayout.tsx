@@ -47,7 +47,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
     {
       title: "CONTENT",
       items: [
-        { name: "Executives", href: "/admin/executives", icon: Users },
+        { name: "Councils", href: "/admin/councils", icon: Users },
         { name: "Events", href: "/admin/events", icon: Calendar },
         { name: "News", href: "/admin/news", icon: BookOpen },
         { name: "Magazine", href: "/admin/magazines", icon: BookOpen },
