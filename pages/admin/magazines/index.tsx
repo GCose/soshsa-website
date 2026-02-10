@@ -7,7 +7,7 @@ import Table from "@/components/dashboard/ui/Table";
 import { renderPublishedBadge } from "@/utils/badge";
 import Input from "@/components/dashboard/ui/InputField";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
-import { Plus, Edit, Trash2, FileText, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Upload } from "lucide-react";
 import { MagazineIssue, TableColumn } from "@/types/interface/dashboard";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
@@ -17,6 +17,7 @@ const mockMagazines: MagazineIssue[] = [
     id: "10",
     title: "Issue 10",
     year: "2024",
+    coverImage: "/images/home/magazine-1.jpg",
     articlesCount: 8,
     isPublished: true,
     publishedAt: "2024-01-15",
@@ -26,6 +27,7 @@ const mockMagazines: MagazineIssue[] = [
     id: "11",
     title: "Issue 11",
     year: "2024",
+    coverImage: "/images/home/magazine-2.jpg",
     articlesCount: 6,
     isPublished: true,
     publishedAt: "2024-01-10",
@@ -35,6 +37,7 @@ const mockMagazines: MagazineIssue[] = [
     id: "12",
     title: "Issue 12",
     year: "2023",
+    coverImage: "/images/home/magazine-3.jpg",
     articlesCount: 0,
     isPublished: false,
     publishedAt: "",
@@ -68,6 +71,10 @@ const MagazinePage = () => {
       mag.year.includes(searchQuery),
   );
 
+  const handleRowClick = (issue: MagazineIssue) => {
+    router.push(`/admin/magazines/${issue.id}/articles`);
+  };
+
   const handleOpenIssueSheet = (issue?: MagazineIssue) => {
     if (issue) {
       setEditingIssue(issue);
@@ -76,6 +83,7 @@ const MagazinePage = () => {
         year: issue.year,
         isPublished: issue.isPublished,
       });
+      setCoverImagePreview(issue.coverImage);
     } else {
       setEditingIssue(null);
       setIssueFormData({
@@ -117,9 +125,23 @@ const MagazinePage = () => {
 
   const issueColumns: TableColumn<MagazineIssue>[] = [
     {
+      key: "coverImage",
+      label: "Cover",
+      render: (value: string | boolean | number | undefined, row) => (
+        <div className="w-16 h-20 rounded overflow-hidden bg-gray-200 relative">
+          <Image
+            src={value as string}
+            alt={row.title}
+            fill
+            className="object-cover"
+          />
+        </div>
+      ),
+    },
+    {
       key: "title",
       label: "Issue",
-      render: (value: string | boolean | number) => (
+      render: (value: string | boolean | number | undefined) => (
         <span className="font-medium text-gray-900">{value}</span>
       ),
     },
@@ -130,7 +152,7 @@ const MagazinePage = () => {
     {
       key: "articlesCount",
       label: "Articles",
-      render: (value: string | boolean | number) => (
+      render: (value: string | boolean | number | undefined) => (
         <span className="text-gray-700">
           {value} {value === 1 ? "article" : "articles"}
         </span>
@@ -139,7 +161,7 @@ const MagazinePage = () => {
     {
       key: "publishedAt",
       label: "Published",
-      render: (value: string | boolean | number) =>
+      render: (value: string | boolean | number | undefined) =>
         value
           ? new Date(value as string).toLocaleDateString("en-GB", {
               year: "numeric",
@@ -152,35 +174,32 @@ const MagazinePage = () => {
     {
       key: "isPublished",
       label: "Status",
-      render: (value: string | boolean | number) =>
+      render: (value: string | boolean | number | undefined) =>
         renderPublishedBadge(value as boolean),
     },
     {
-      key: "id",
+      key: "actions",
       label: "Actions",
-      render: (value: string | boolean | number, row) => (
+      render: (_value: string | boolean | number | undefined, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => router.push(`/admin/magazines/${value}/articles`)}
-            className="cursor-pointer p-2 text-gray-600 hover:bg-gray-50 rounded transition-colors"
-            title="Manage Articles"
-          >
-            <FileText size={16} />
-          </button>
-          <button
-            onClick={() => handleOpenIssueSheet(row)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenIssueSheet(row);
+            }}
             className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Edit"
           >
             <Edit size={16} />
           </button>
           <button
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
               setDeleteModal({
                 isOpen: true,
-                id: value as string,
-              })
-            }
+                id: row.id,
+              });
+            }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
@@ -213,6 +232,7 @@ const MagazinePage = () => {
           columns={issueColumns}
           data={filteredMagazines}
           emptyMessage="No magazine issues found"
+          onRowClick={handleRowClick}
         />
       </div>
 
@@ -228,17 +248,17 @@ const MagazinePage = () => {
             </label>
             <div className="flex items-start gap-6">
               {coverImagePreview ? (
-                <div className="w-32 h-48 rounded-lg overflow-hidden bg-gray-200 relative">
+                <div className="w-48 h-64 rounded-lg overflow-hidden bg-gray-200 relative">
                   <Image
                     src={coverImagePreview}
-                    alt="Preview"
+                    alt="Cover Preview"
                     fill
                     className="object-cover"
                     unoptimized
                   />
                 </div>
               ) : (
-                <div className="w-32 h-48 rounded-lg bg-gray-100 flex items-center justify-center">
+                <div className="w-48 h-64 rounded-lg bg-gray-100 flex items-center justify-center">
                   <Upload size={32} className="text-gray-400" />
                 </div>
               )}
@@ -248,17 +268,17 @@ const MagazinePage = () => {
                   accept="image/*"
                   onChange={handleCoverImageChange}
                   className="hidden"
-                  id="cover-upload"
+                  id="cover-image-upload"
                 />
                 <label
-                  htmlFor="cover-upload"
+                  htmlFor="cover-image-upload"
                   className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   <Upload size={16} />
                   Upload Cover
                 </label>
                 <p className="text-xs text-gray-500 mt-2">
-                  Recommended: 400x600px
+                  Recommended: 800x1200px
                 </p>
               </div>
             </div>
@@ -267,7 +287,7 @@ const MagazinePage = () => {
           <Input
             label="Issue Title"
             type="text"
-            placeholder="e.g., Issue 12"
+            placeholder="e.g., Issue 13"
             value={issueFormData.title}
             onChange={(e) =>
               setIssueFormData({ ...issueFormData, title: e.target.value })
@@ -278,7 +298,7 @@ const MagazinePage = () => {
           <Input
             label="Year"
             type="text"
-            placeholder="2024"
+            placeholder="e.g., 2024"
             value={issueFormData.year}
             onChange={(e) =>
               setIssueFormData({ ...issueFormData, year: e.target.value })
@@ -289,7 +309,7 @@ const MagazinePage = () => {
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
-              id="issuePublished"
+              id="isPublished"
               checked={issueFormData.isPublished}
               onChange={(e) =>
                 setIssueFormData({
@@ -300,10 +320,10 @@ const MagazinePage = () => {
               className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
             />
             <label
-              htmlFor="issuePublished"
+              htmlFor="isPublished"
               className="text-sm font-medium text-gray-700"
             >
-              Publish issue
+              Publish immediately
             </label>
           </div>
 

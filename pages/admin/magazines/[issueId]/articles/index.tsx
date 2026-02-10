@@ -18,7 +18,9 @@ const mockArticles: Article[] = [
     id: "10",
     title: "The Future of Social Sciences",
     author: "Amie Jallow",
-    content: "",
+    content:
+      "Social sciences are evolving rapidly in response to technological advancement and global challenges. This article explores emerging trends in sociology, psychology, and anthropology, examining how researchers are adapting their methodologies to address contemporary issues such as digital communication, climate change, and social inequality.\n\nThe integration of big data analytics and artificial intelligence into social science research has opened new avenues for understanding human behavior at scale. However, this technological shift also raises important questions about ethics, privacy, and the fundamental nature of social inquiry.",
+    image: "/images/home/magazine-1.jpg",
     isPublished: true,
     createdAt: "2024-01-15",
   },
@@ -26,7 +28,9 @@ const mockArticles: Article[] = [
     id: "11",
     title: "Understanding Cultural Dynamics",
     author: "Bakary Ceesay",
-    content: "",
+    content:
+      "Cultural dynamics shape every aspect of human society, from language and religion to economic systems and political structures. This comprehensive study examines how cultures evolve, adapt, and influence one another in an increasingly interconnected world.\n\nThrough ethnographic research and comparative analysis, we explore the mechanisms of cultural change, the role of tradition in modern societies, and the complex relationship between globalization and cultural identity. Special attention is given to West African cultural practices and their transformation in contemporary contexts.",
+    image: "/images/home/magazine-2.jpg",
     isPublished: true,
     createdAt: "2024-01-14",
   },
@@ -34,7 +38,9 @@ const mockArticles: Article[] = [
     id: "12",
     title: "Research Methods in Sociology",
     author: "Fatou Sanneh",
-    content: "",
+    content:
+      "Effective sociological research requires a solid understanding of both quantitative and qualitative methodologies. This article provides a comprehensive overview of research design, data collection techniques, and analytical approaches commonly used in sociological studies.\n\nWe examine the strengths and limitations of various research methods, including surveys, interviews, participant observation, and content analysis. Particular emphasis is placed on ethical considerations and the importance of reflexivity in social research.",
+    image: "/images/home/magazine-3.jpg",
     isPublished: false,
     createdAt: "2024-01-13",
   },
@@ -46,7 +52,9 @@ const ArticlesPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [articles, setArticles] = useState(mockArticles);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
+  const [viewingArticle, setViewingArticle] = useState<Article | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [formData, setFormData] = useState({
     title: "",
@@ -68,6 +76,11 @@ const ArticlesPage = () => {
       article.author.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  const handleView = (article: Article) => {
+    setViewingArticle(article);
+    setViewSheetOpen(true);
+  };
+
   const handleOpenSheet = (article?: Article) => {
     if (article) {
       setEditingArticle(article);
@@ -77,6 +90,7 @@ const ArticlesPage = () => {
         content: article.content,
         isPublished: article.isPublished,
       });
+      setImagePreview(article.image);
     } else {
       setEditingArticle(null);
       setFormData({
@@ -119,9 +133,23 @@ const ArticlesPage = () => {
 
   const columns: TableColumn<Article>[] = [
     {
+      key: "image",
+      label: "Image",
+      render: (value: string | boolean | undefined, row) => (
+        <div className="w-16 h-16 rounded overflow-hidden bg-gray-200 relative">
+          <Image
+            src={value as string}
+            alt={row.title}
+            fill
+            className="object-cover"
+          />
+        </div>
+      ),
+    },
+    {
       key: "title",
       label: "Title",
-      render: (value: string | boolean) => (
+      render: (value: string | boolean | undefined) => (
         <span className="font-medium text-gray-900">{value}</span>
       ),
     },
@@ -132,7 +160,7 @@ const ArticlesPage = () => {
     {
       key: "createdAt",
       label: "Created",
-      render: (value: string | boolean) =>
+      render: (value: string | boolean | undefined) =>
         new Date(value as string).toLocaleDateString("en-GB", {
           year: "numeric",
           month: "short",
@@ -143,25 +171,29 @@ const ArticlesPage = () => {
     {
       key: "isPublished",
       label: "Status",
-      render: (value: string | boolean) =>
+      render: (value: string | boolean | undefined) =>
         renderPublishedBadge(value as boolean),
     },
     {
-      key: "id",
+      key: "actions",
       label: "Actions",
-      render: (value: string | boolean, row) => (
+      render: (_value: string | boolean | undefined, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => handleOpenSheet(row)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenSheet(row);
+            }}
             className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Edit"
           >
             <Edit size={16} />
           </button>
           <button
-            onClick={() =>
-              setDeleteModal({ isOpen: true, id: value as string })
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteModal({ isOpen: true, id: row.id });
+            }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
@@ -202,6 +234,7 @@ const ArticlesPage = () => {
           columns={columns}
           data={filteredArticles}
           emptyMessage="No articles found"
+          onRowClick={handleView}
         />
       </div>
 
@@ -247,14 +280,14 @@ const ArticlesPage = () => {
                   Upload Image
                 </label>
                 <p className="text-xs text-gray-500 mt-2">
-                  Recommended: 1200x630px
+                  Recommended: 1200x800px
                 </p>
               </div>
             </div>
           </div>
 
           <Input
-            label="Title"
+            label="Article Title"
             type="text"
             placeholder="Enter article title"
             value={formData.title}
@@ -267,7 +300,7 @@ const ArticlesPage = () => {
           <Input
             label="Author"
             type="text"
-            placeholder="Author name"
+            placeholder="Enter author name"
             value={formData.author}
             onChange={(e) =>
               setFormData({ ...formData, author: e.target.value })
@@ -278,16 +311,15 @@ const ArticlesPage = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Content
-              <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
               value={formData.content}
               onChange={(e) =>
                 setFormData({ ...formData, content: e.target.value })
               }
-              rows={15}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              placeholder="Write the article content..."
+              rows={8}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Article content..."
               required
             />
           </div>
@@ -306,7 +338,7 @@ const ArticlesPage = () => {
               htmlFor="isPublished"
               className="text-sm font-medium text-gray-700"
             >
-              Publish article
+              Publish immediately
             </label>
           </div>
 
@@ -326,6 +358,97 @@ const ArticlesPage = () => {
             </button>
           </div>
         </form>
+      </Sheet>
+
+      <Sheet
+        isOpen={viewSheetOpen}
+        onClose={() => setViewSheetOpen(false)}
+        title="Article Details"
+      >
+        {viewingArticle && (
+          <div className="space-y-6">
+            <div className="flex justify-center">
+              <div className="w-200 h-200 rounded-sm overflow-hidden bg-gray-200 relative">
+                <Image
+                  src={viewingArticle.image}
+                  alt={viewingArticle.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Title
+                </label>
+                <p className="text-gray-900 font-medium text-lg">
+                  {viewingArticle.title}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Author
+                </label>
+                <p className="text-gray-900">{viewingArticle.author}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Content
+                </label>
+                <div className="max-h-64 overflow-y-auto p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-900 whitespace-pre-wrap">
+                    {viewingArticle.content || "No content available"}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Status
+                </label>
+                {renderPublishedBadge(viewingArticle.isPublished)}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Created
+                </label>
+                <p className="text-gray-900">
+                  {new Date(viewingArticle.createdAt).toLocaleDateString(
+                    "en-GB",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    },
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setViewSheetOpen(false);
+                  handleOpenSheet(viewingArticle);
+                }}
+                className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => setViewSheetOpen(false)}
+                className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </Sheet>
 
       <ConfirmationModal

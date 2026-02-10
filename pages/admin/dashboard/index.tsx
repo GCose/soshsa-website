@@ -4,6 +4,7 @@ import { TableColumn } from "@/types/interface/dashboard";
 import StatsCard from "@/components/dashboard/ui/StatsCard";
 import { Calendar, BookOpen, Book } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
+import Link from "next/link";
 
 const mockStats = {
   totalEvents: 12,
@@ -173,12 +174,12 @@ const DashboardPage = () => {
           <h2 className="text-[clamp(1rem,2vw,1.4rem)] font-bold text-gray-900">
             Recent Contact Submissions
           </h2>
-          <a
-            href="/admin/contact"
+          <Link
+            href="/admin/inbox"
             className="text-sm text-primary hover:text-primary/80 font-medium transition-colors cursor-pointer"
           >
             View All →
-          </a>
+          </Link>
         </div>
         <Table
           columns={columns}

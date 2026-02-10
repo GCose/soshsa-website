@@ -75,7 +75,7 @@ export interface Executive {
     image: string;
     isActive: boolean;
     councilId: string;
-    councilName?: string;  
+    councilName?: string;
     createdAt: string;
 }
 
@@ -92,6 +92,7 @@ export interface Event {
     date: string;
     location: string;
     type: string;
+    image: string;
     isPublished: boolean;
     isFeatured: boolean;
     createdAt: string;
@@ -101,6 +102,7 @@ export interface MagazineIssue {
     id: string;
     title: string;
     year: string;
+    coverImage: string;
     articlesCount: number;
     isPublished: boolean;
     publishedAt: string;
@@ -151,6 +153,7 @@ export interface NewsArticle {
     title: string;
     excerpt: string;
     author: string;
+    image: string;
     isPublished: boolean;
     publishedAt: string;
     createdAt: string;
@@ -161,6 +164,7 @@ export interface Article {
     title: string;
     author: string;
     content: string;
+    image: string;
     isPublished: boolean;
     createdAt: string;
 }

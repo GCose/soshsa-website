@@ -18,6 +18,7 @@ const mockEvents: Event[] = [
     date: "2024-02-15",
     location: "UTG Main Campus",
     type: "Workshop",
+    image: "/images/home/event-1.jpg",
     isPublished: true,
     isFeatured: true,
     createdAt: "2024-01-15",
@@ -28,6 +29,7 @@ const mockEvents: Event[] = [
     date: "2024-02-20",
     location: "SICT Auditorium",
     type: "Seminar",
+    image: "/images/home/event-2.jpg",
     isPublished: true,
     isFeatured: false,
     createdAt: "2024-01-14",
@@ -38,6 +40,7 @@ const mockEvents: Event[] = [
     date: "2024-03-01",
     location: "Brikama Community Center",
     type: "Community Service",
+    image: "/images/home/event-3.jpg",
     isPublished: false,
     isFeatured: false,
     createdAt: "2024-01-13",
@@ -48,6 +51,7 @@ const mockEvents: Event[] = [
     date: "2024-03-10",
     location: "Online",
     type: "Workshop",
+    image: "/images/home/event-2.jpg",
     isPublished: true,
     isFeatured: true,
     createdAt: "2024-01-12",
@@ -113,6 +117,7 @@ const EventsPage = () => {
         isFeatured: event.isFeatured,
         isPublished: event.isPublished,
       });
+      setImagePreview(event.image);
     } else {
       setEditingEvent(null);
       setFormData({
@@ -159,9 +164,23 @@ const EventsPage = () => {
 
   const columns: TableColumn<Event>[] = [
     {
+      key: "image",
+      label: "Image",
+      render: (value: string | boolean | undefined, row) => (
+        <div className="w-16 h-16 rounded overflow-hidden bg-gray-200 relative">
+          <Image
+            src={value as string}
+            alt={row.title}
+            fill
+            className="object-cover"
+          />
+        </div>
+      ),
+    },
+    {
       key: "title",
       label: "Event Title",
-      render: (value: string | boolean, row) => (
+      render: (value: string | boolean | undefined, row) => (
         <div className="flex items-center gap-2">
           <span className="font-medium text-gray-900">{value}</span>
           {row.isFeatured && (
@@ -173,7 +192,7 @@ const EventsPage = () => {
     {
       key: "date",
       label: "Date",
-      render: (value: string | boolean) =>
+      render: (value: string | boolean | undefined) =>
         new Date(value as string).toLocaleDateString("en-GB", {
           year: "numeric",
           month: "short",
@@ -188,18 +207,19 @@ const EventsPage = () => {
     {
       key: "type",
       label: "Type",
-      render: (value: string | boolean) => renderTypeBadge(value as string),
+      render: (value: string | boolean | undefined) =>
+        renderTypeBadge(value as string),
     },
     {
       key: "isPublished",
       label: "Status",
-      render: (value: string | boolean) =>
+      render: (value: string | boolean | undefined) =>
         renderPublishedBadge(value as boolean),
     },
     {
-      key: "id",
+      key: "actions",
       label: "Actions",
-      render: (value: string | boolean, row) => (
+      render: (_value: string | boolean | undefined, row) => (
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
@@ -214,7 +234,7 @@ const EventsPage = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setDeleteModal({ isOpen: true, id: value as string });
+              setDeleteModal({ isOpen: true, id: row.id });
             }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
@@ -298,6 +318,17 @@ const EventsPage = () => {
       >
         {viewingEvent && (
           <div className="space-y-6">
+            <div className="flex justify-center">
+              <div className="w-full h-screen aspect-video rounded-sm  bg-gray-200 relative">
+                <Image
+                  src={viewingEvent.image}
+                  alt={viewingEvent.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </div>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-1">
@@ -439,22 +470,21 @@ const EventsPage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, type: e.target.value })
               }
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
               required
             >
-              <option value="">Select type</option>
+              <option value="">Select event type</option>
               <option value="Workshop">Workshop</option>
               <option value="Seminar">Seminar</option>
               <option value="Conference">Conference</option>
               <option value="Community Service">Community Service</option>
-              <option value="Networking">Networking</option>
-              <option value="Training">Training</option>
+              <option value="Meeting">Meeting</option>
               <option value="Other">Other</option>
             </select>
           </div>
 
           <Input
-            label="Date"
+            label="Event Date"
             type="date"
             value={formData.date}
             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
@@ -464,7 +494,7 @@ const EventsPage = () => {
           <Input
             label="Location"
             type="text"
-            placeholder="Event location"
+            placeholder="Enter event location"
             value={formData.location}
             onChange={(e) =>
               setFormData({ ...formData, location: e.target.value })
@@ -475,56 +505,52 @@ const EventsPage = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Description
-              <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              rows={5}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              placeholder="Event description..."
-              required
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Enter event description..."
             />
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="isFeatured"
-                checked={formData.isFeatured}
-                onChange={(e) =>
-                  setFormData({ ...formData, isFeatured: e.target.checked })
-                }
-                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-              />
-              <label
-                htmlFor="isFeatured"
-                className="text-sm font-medium text-gray-700"
-              >
-                Featured (show on homepage)
-              </label>
-            </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isFeatured"
+              checked={formData.isFeatured}
+              onChange={(e) =>
+                setFormData({ ...formData, isFeatured: e.target.checked })
+              }
+              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+            />
+            <label
+              htmlFor="isFeatured"
+              className="text-sm font-medium text-gray-700"
+            >
+              Featured Event
+            </label>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="isPublished"
-                checked={formData.isPublished}
-                onChange={(e) =>
-                  setFormData({ ...formData, isPublished: e.target.checked })
-                }
-                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-              />
-              <label
-                htmlFor="isPublished"
-                className="text-sm font-medium text-gray-700"
-              >
-                Publish (make visible to public)
-              </label>
-            </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="isPublished"
+              checked={formData.isPublished}
+              onChange={(e) =>
+                setFormData({ ...formData, isPublished: e.target.checked })
+              }
+              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+            />
+            <label
+              htmlFor="isPublished"
+              className="text-sm font-medium text-gray-700"
+            >
+              Publish immediately
+            </label>
           </div>
 
           <div className="flex gap-4 pt-4">

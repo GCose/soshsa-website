@@ -18,6 +18,7 @@ const mockNews: NewsArticle[] = [
     excerpt:
       "The Social Sciences and Humanities Students Association has been recognized for excellence in student leadership...",
     author: "Admin User",
+    image: "/images/about/story-1.jpg",
     isPublished: true,
     publishedAt: "2024-01-15",
     createdAt: "2024-01-15",
@@ -28,6 +29,7 @@ const mockNews: NewsArticle[] = [
     excerpt:
       "The university announces several new programs in social sciences and humanities fields...",
     author: "Admin User",
+    image: "/images/about/story-2.jpg",
     isPublished: true,
     publishedAt: "2024-01-14",
     createdAt: "2024-01-14",
@@ -38,6 +40,7 @@ const mockNews: NewsArticle[] = [
     excerpt:
       "Mark your calendars for the annual career fair connecting students with potential employers...",
     author: "Admin User",
+    image: "/images/about/story-3.jpg",
     isPublished: false,
     publishedAt: "",
     createdAt: "2024-01-13",
@@ -103,6 +106,7 @@ const NewsPage = () => {
         author: article.author,
         isPublished: article.isPublished,
       });
+      setImagePreview(article.image);
     } else {
       setEditingArticle(null);
       setFormData({
@@ -147,9 +151,23 @@ const NewsPage = () => {
 
   const columns: TableColumn<NewsArticle>[] = [
     {
+      key: "image",
+      label: "Image",
+      render: (value: string | boolean | undefined, row) => (
+        <div className="w-16 h-16 rounded overflow-hidden bg-gray-200 relative">
+          <Image
+            src={value as string}
+            alt={row.title}
+            fill
+            className="object-cover"
+          />
+        </div>
+      ),
+    },
+    {
       key: "title",
       label: "Title",
-      render: (value: string | boolean) => (
+      render: (value: string | boolean | undefined) => (
         <span className="font-medium text-gray-900">{value}</span>
       ),
     },
@@ -160,7 +178,7 @@ const NewsPage = () => {
     {
       key: "publishedAt",
       label: "Published",
-      render: (value: string | boolean) =>
+      render: (value: string | boolean | undefined) =>
         value
           ? new Date(value as string).toLocaleDateString("en-GB", {
               year: "numeric",
@@ -173,13 +191,13 @@ const NewsPage = () => {
     {
       key: "isPublished",
       label: "Status",
-      render: (value: string | boolean) =>
+      render: (value: string | boolean | undefined) =>
         renderPublishedBadge(value as boolean),
     },
     {
-      key: "id",
+      key: "actions",
       label: "Actions",
-      render: (value: string | boolean, row) => (
+      render: (_value: string | boolean | undefined, row) => (
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
@@ -194,7 +212,7 @@ const NewsPage = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setDeleteModal({ isOpen: true, id: value as string });
+              setDeleteModal({ isOpen: true, id: row.id });
             }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
@@ -277,6 +295,17 @@ const NewsPage = () => {
       >
         {viewingArticle && (
           <div className="space-y-6">
+            <div className="flex justify-center">
+              <div className="w-full h-full aspect-video rounded-sm overflow-hidden bg-gray-200 relative">
+                <Image
+                  src={viewingArticle.image}
+                  alt={viewingArticle.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            </div>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-1">
@@ -356,7 +385,7 @@ const NewsPage = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Cover Image
+              Featured Image
             </label>
             <div className="flex items-start gap-6">
               {imagePreview ? (
@@ -380,10 +409,10 @@ const NewsPage = () => {
                   accept="image/*"
                   onChange={handleImageChange}
                   className="hidden"
-                  id="image-upload"
+                  id="news-image-upload"
                 />
                 <label
-                  htmlFor="image-upload"
+                  htmlFor="news-image-upload"
                   className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   <Upload size={16} />
@@ -397,7 +426,7 @@ const NewsPage = () => {
           </div>
 
           <Input
-            label="Title"
+            label="Article Title"
             type="text"
             placeholder="Enter article title"
             value={formData.title}
@@ -410,7 +439,6 @@ const NewsPage = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Excerpt
-              <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
               value={formData.excerpt}
@@ -418,8 +446,8 @@ const NewsPage = () => {
                 setFormData({ ...formData, excerpt: e.target.value })
               }
               rows={3}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              placeholder="Brief summary (140-160 characters)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Brief summary of the article..."
               required
             />
           </div>
@@ -427,16 +455,15 @@ const NewsPage = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Content
-              <span className="text-red-500 ml-1">*</span>
             </label>
             <textarea
               value={formData.content}
               onChange={(e) =>
                 setFormData({ ...formData, content: e.target.value })
               }
-              rows={15}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              placeholder="Write the full article content here..."
+              rows={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Full article content..."
               required
             />
           </div>
@@ -444,7 +471,6 @@ const NewsPage = () => {
           <Input
             label="Author"
             type="text"
-            placeholder="Author name"
             value={formData.author}
             onChange={(e) =>
               setFormData({ ...formData, author: e.target.value })

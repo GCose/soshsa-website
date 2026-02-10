@@ -279,7 +279,7 @@ const CommentsPage = () => {
                     handleApprove(viewingComment.id);
                     setViewSheetOpen(false);
                   }}
-                  className="cursor-pointer flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                  className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-teal-700 transition-colors"
                 >
                   Approve
                 </button>
