@@ -2,15 +2,14 @@ import { ContactSubmission } from "@/types";
 import Table from "@/components/dashboard/ui/Table";
 import { TableColumn } from "@/types/interface/dashboard";
 import StatsCard from "@/components/dashboard/ui/StatsCard";
-import { Calendar, BookOpen, MessageSquare, Mail } from "lucide-react";
+import { Calendar, BookOpen, Book } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 
 const mockStats = {
   totalEvents: 12,
   totalNews: 24,
   totalMagazines: 8,
-  pendingComments: 5,
-  unreadMessages: 3,
+  totalCourses: 15,
 };
 
 const mockRecentSubmissions: ContactSubmission[] = [
@@ -146,7 +145,7 @@ const DashboardPage = () => {
 
   return (
     <DashboardLayout pageTitle="Dashboard">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-15">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-15">
         <StatsCard
           title="Total Events"
           value={mockStats.totalEvents}
@@ -163,14 +162,9 @@ const DashboardPage = () => {
           icon={<BookOpen size={24} />}
         />
         <StatsCard
-          title="Pending Comments"
-          value={mockStats.pendingComments}
-          icon={<MessageSquare size={24} />}
-        />
-        <StatsCard
-          title="Unread Messages"
-          value={mockStats.unreadMessages}
-          icon={<Mail size={24} />}
+          title="Total Courses"
+          value={mockStats.totalCourses}
+          icon={<Book size={24} />}
         />
       </div>
 

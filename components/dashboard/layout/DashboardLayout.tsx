@@ -137,7 +137,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
         )}
 
         <aside
-          className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 bg-gray-50 
+          className={`fixed top-0 left-0 z-40 h-screen transition-all duration-300 bg-gray-100/60 rounded-tr-[3rem] rounded-br-[3rem]
             ${sidebarOpen ? "w-64" : "w-20"} 
             ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
             lg:translate-x-0`}
@@ -219,7 +219,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
             sidebarOpen ? "lg:ml-64" : "lg:ml-20"
           }`}
         >
-          <header className="sticky top-0 z-30 bg-gray-50 h-16 flex items-center justify-between px-4 lg:px-8">
+          <header className="sticky top-0 z-30 bg-white h-16 flex items-center justify-between px-4 lg:px-8">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setMobileSidebarOpen(true)}
