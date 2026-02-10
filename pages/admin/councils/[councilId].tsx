@@ -210,7 +210,7 @@ const CouncilExecutivesPage = () => {
         }),
     },
     {
-      key: "actions",
+      key: "id",
       label: "Actions",
       render: (_value: string | boolean | undefined, row) => (
         <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ const CouncilExecutivesPage = () => {
   ];
 
   return (
-    <DashboardLayout pageTitle={`Council / ${councilName}`}>
+    <DashboardLayout pageTitle={councilName}>
       <div className="space-y-6">
         <Link
           href="/admin/councils"
@@ -284,7 +284,7 @@ const CouncilExecutivesPage = () => {
         {viewingExecutive && (
           <div className="space-y-6">
             <div className="flex justify-center">
-              <div className="w-200 h-200 rounded-sm overflow-hidden bg-gray-200 relative">
+              <div className="w-200 h-200 rounded bg-gray-200 relative">
                 <Image
                   src={viewingExecutive.image}
                   alt={viewingExecutive.name}

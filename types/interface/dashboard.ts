@@ -24,7 +24,7 @@ export interface SearchBarProps
 }
 
 export interface TableColumn<T> {
-    key: ColumnKey<T> | string;
+    key: ColumnKey<T>;
     label: string;
     render?: (
         value: T[ColumnKey<T>],

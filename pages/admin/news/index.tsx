@@ -195,7 +195,7 @@ const NewsPage = () => {
         renderPublishedBadge(value as boolean),
     },
     {
-      key: "actions",
+      key: "id",
       label: "Actions",
       render: (_value: string | boolean | undefined, row) => (
         <div className="flex items-center gap-2">
