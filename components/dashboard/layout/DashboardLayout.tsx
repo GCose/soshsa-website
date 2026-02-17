@@ -275,7 +275,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
                   <button
                     onClick={() => {
                       setDropdownOpen(false);
-                      router.push("/admin/auth/sign-in");
+                      window.location.href = "/api/admin/logout";
                     }}
                     className="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >

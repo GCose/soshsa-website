@@ -9,6 +9,7 @@ import axios, { AxiosError } from "axios";
 import { getErrorMessage } from "@/utils/error";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { CustomError, ErrorResponseData } from "@/types";
+import Input from "@/components/dashboard/ui/InputField";
 
 const SignInPage = () => {
   const router = useRouter();
@@ -108,7 +109,7 @@ const SignInPage = () => {
                     size={18}
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
                   />
-                  <input
+                  <Input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -128,7 +129,7 @@ const SignInPage = () => {
                     size={18}
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
                   />
-                  <input
+                  <Input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
