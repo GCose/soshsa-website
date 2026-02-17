@@ -12,11 +12,11 @@ import { CustomError, ErrorResponseData } from "@/types";
 import Input from "@/components/dashboard/ui/InputField";
 
 const SignInPage = () => {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +25,7 @@ const SignInPage = () => {
       toast.error("Missing fields", {
         description: "Please fill in all fields",
         richColors: true,
+        duration: 4000,
       });
       return;
     }
@@ -36,13 +37,18 @@ const SignInPage = () => {
       toast.success("Welcome back!", {
         description: "Redirecting to dashboard...",
         richColors: true,
+        duration: 4000,
       });
       router.push("/admin/dashboard");
     } catch (error) {
       const { message } = getErrorMessage(
         error as AxiosError<ErrorResponseData> | CustomError | Error,
       );
-      toast.error("Login failed", { description: message, richColors: true });
+      toast.error("Login failed", {
+        description: message,
+        richColors: true,
+        duration: 4000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -63,10 +69,10 @@ const SignInPage = () => {
         <div className="hidden lg:flex col-span-8 p-4">
           <div className="w-full h-full rounded-2xl bg-teal-500/20 flex flex-col items-center justify-center gap-8">
             <Image
-              src="/images/logo.jpeg"
+              width={300}
+              height={300}
               alt="SoSHSA Logo"
-              width={220}
-              height={220}
+              src="/images/logo.jpeg"
               className="object-contain rounded-full"
             />
             <div className="text-center">
@@ -84,10 +90,10 @@ const SignInPage = () => {
           <div className="w-full max-w-md">
             <div className="lg:hidden flex items-center justify-center mb-10">
               <Image
-                src="/images/logo.jpeg"
+                width={150}
+                height={150}
                 alt="SoSHSA Logo"
-                width={80}
-                height={80}
+                src="/images/logo.jpeg"
                 className="object-contain rounded-full"
               />
             </div>
@@ -110,12 +116,12 @@ const SignInPage = () => {
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
                   />
                   <Input
+                    required
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@soshsa.com"
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    required
                   />
                 </div>
               </div>
@@ -130,12 +136,12 @@ const SignInPage = () => {
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
                   />
                   <Input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-11 pr-12 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     required
+                    value={password}
+                    placeholder="••••••••"
+                    type={showPassword ? "text" : "password"}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-11 pr-12 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   <button
                     type="button"

@@ -1,15 +1,53 @@
+import { AdminAuth, ColumnKey } from "..";
 import { InputHTMLAttributes, ReactNode } from "react";
-import { ColumnKey } from "..";
 
 export interface DashboardLayoutProps {
     children: ReactNode
     pageTitle: string
 }
 
+export interface DashboardPageProps {
+    adminData: AdminAuth;
+}
+
 export interface StatsCardProps {
     title: string;
     value: string | number;
     icon: React.ReactNode;
+}
+
+export interface DashboardStats {
+    courses: {
+        total: number;
+        active: number;
+        inactive: number;
+    };
+    inbox: {
+        total: number;
+        pending: number;
+        read: number;
+        resolved: number;
+    };
+    newsArticles: {
+        total: number;
+        published: number;
+    };
+    magazines: {
+        total: number;
+        published: number;
+    };
+}
+
+export interface InboxMessage {
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    subject: string;
+    message: string;
+    status: "PENDING" | "READ" | "RESOLVED";
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
