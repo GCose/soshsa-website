@@ -17,11 +17,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const { data } = await axios.post(`${BASE_URL}/admin/auth/login`, { email, password });
 
         const cookieData = {
-            token: data.data.token,
-            userId: data.data.user.id,
-            email: data.data.user.email,
-            firstName: data.data.user.firstName,
-            lastName: data.data.user.lastName,
+            token: data.data.accessToken,
+            userId: data.data.admin.id,
+            email: data.data.admin.email,
+            firstName: data.data.admin.firstName,
+            lastName: data.data.admin.lastName,
         };
 
         const tokenCookie = serialize('soshsa_admin', JSON.stringify(cookieData), {
