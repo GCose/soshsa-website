@@ -128,11 +128,11 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
       <Head>
         <title>{`SoSHSA Admin | ${pageTitle}`}</title>
       </Head>
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white style={{ fontFamily: 'Inter, sans-serif' }  ">
         {mobileSidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
             onClick={() => setMobileSidebarOpen(false)}
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           />
         )}
 

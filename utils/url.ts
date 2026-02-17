@@ -1,0 +1,1 @@
+export const BASE_URL: string = 'https://soshsa-backend.onrender.com/api';

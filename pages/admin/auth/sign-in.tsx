@@ -1,26 +1,50 @@
 import Head from "next/head";
-import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
+import { NextApiRequest } from "next";
 import { useRouter } from "next/router";
-import { Eye, EyeOff } from "lucide-react";
-import { useState, FormEvent } from "react";
-import Input from "@/components/dashboard/ui/InputField";
+import { toast, Toaster } from "sonner";
+import { isLoggedIn } from "@/utils/auth";
+import axios, { AxiosError } from "axios";
+import { getErrorMessage } from "@/utils/error";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { CustomError, ErrorResponseData } from "@/types";
 
 const SignInPage = () => {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setErrors({});
 
-    router.push("/admin/dashboard");
+    if (!email || !password) {
+      toast.error("Missing fields", {
+        description: "Please fill in all fields",
+        richColors: true,
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await axios.post("/api/admin/login", { email, password });
+      toast.success("Welcome back!", {
+        description: "Redirecting to dashboard...",
+        richColors: true,
+      });
+      router.push("/admin/dashboard");
+    } catch (error) {
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error("Login failed", { description: message, richColors: true });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -28,68 +52,108 @@ const SignInPage = () => {
       <Head>
         <title>Sign In | SoSHSA Admin</title>
       </Head>
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-lg border border-gray-200 p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                Welcome Back
+
+      <Toaster position="top-right" richColors />
+
+      <div
+        className="min-h-screen bg-gray-50 grid grid-cols-12"
+        style={{ fontFamily: "Inter, sans-serif" }}
+      >
+        <div className="hidden lg:flex col-span-8 p-4">
+          <div className="w-full h-full rounded-2xl bg-teal-500/20 flex flex-col items-center justify-center gap-8">
+            <Image
+              src="/images/logo.jpeg"
+              alt="SoSHSA Logo"
+              width={220}
+              height={220}
+              className="object-contain rounded-full"
+            />
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                SoSHSA Admin
               </h1>
-              <p className="text-gray-600">Sign in to access your dashboard</p>
+              <p className="text-gray-500 text-base">
+                Society of Students of Health Sciences Association
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-span-12 lg:col-span-4 flex items-center justify-center px-6 py-12">
+          <div className="w-full max-w-md">
+            <div className="lg:hidden flex items-center justify-center mb-10">
+              <Image
+                src="/images/logo.jpeg"
+                alt="SoSHSA Logo"
+                width={80}
+                height={80}
+                className="object-contain rounded-full"
+              />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <Input
-                label="Email Address"
-                type="email"
-                placeholder="admin@soshsa.com"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                error={errors.email}
-                required
-              />
+            <div className="mb-10">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Welcome back
+              </h2>
+              <p className="text-gray-500">Sign in to access your dashboard</p>
+            </div>
 
-              <div className="relative">
-                <Input
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  error={errors.password}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="cursor-pointer absolute right-3 top-9 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@soshsa.com"
+                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-11 pr-12 py-3 border border-gray-200 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
-                className="cursor-pointer w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
+                className="cursor-pointer w-full bg-primary text-white py-3.5 rounded-xl font-semibold hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-2"
               >
-                {loading ? "Signing In..." : "Sign In"}
+                {isLoading ? "Signing in..." : "Sign In"}
               </button>
             </form>
-
-            <p className="text-center text-sm text-gray-600 mt-6">
-              Don{"'"}t have an account?{" "}
-              <Link
-                href="/admin/auth/sign-up"
-                className="text-primary hover:text-primary/80 font-medium"
-              >
-                Sign Up
-              </Link>
-            </p>
           </div>
         </div>
       </div>
@@ -98,3 +162,18 @@ const SignInPage = () => {
 };
 
 export default SignInPage;
+
+export const getServerSideProps = async ({ req }: { req: NextApiRequest }) => {
+  const adminData = isLoggedIn(req);
+
+  if (adminData) {
+    return {
+      redirect: {
+        destination: "/admin/dashboard",
+        permanent: false,
+      },
+    };
+  }
+
+  return { props: {} };
+};
