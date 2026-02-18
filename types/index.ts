@@ -24,3 +24,5 @@ export type AdminAuth = {
     firstName: string;
     lastName: string;
 };
+
+export type FilterStatus = "all" | "published" | "draft";

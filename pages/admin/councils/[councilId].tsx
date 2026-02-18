@@ -160,7 +160,7 @@ const ExecutivesPage = ({ adminData }: DashboardPageProps) => {
   const uploadImageToJeetix = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("folder", "soshsa");
+    formData.append("folder", "soshsa/executives");
 
     const { data } = await axios.post(
       `${JEETIX_BASE_URL}/api/storage/upload`,

@@ -312,7 +312,7 @@ const DashboardLayout = ({
             </div>
           </header>
 
-          <main className="p-4 lg:p-8 bg-white">{children}</main>
+          <main className="p-4 lg:px-8 pb-8 bg-white">{children}</main>
         </div>
       </div>
 

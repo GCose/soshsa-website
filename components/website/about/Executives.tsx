@@ -1,10 +1,10 @@
 import useSWR from "swr";
 import axios from "axios";
 import Image from "next/image";
+import { useRef } from "react";
 import { motion } from "framer-motion";
 import { BASE_URL } from "@/utils/url";
 import { Executive } from "@/types/interface/dashboard";
-import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const fetchExecutives = async (): Promise<Executive[]> => {
@@ -76,8 +76,12 @@ const Executives = () => {
       <section className="relative bg-white py-16 md:py-24">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+              No Executive Members
+            </h1>
             <p className="text-gray-500 text-lg">
-              No executive members currently serving.
+              We currently have no serving executive members. Please check back
+              later.
             </p>
           </div>
         </div>

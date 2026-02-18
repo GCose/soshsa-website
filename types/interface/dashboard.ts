@@ -56,7 +56,7 @@ export interface ModalProps {
     onClose: () => void;
     title?: string;
     children: ReactNode;
-    size?: "sm" | "md" | "lg" | "xl";
+    size?: "sm" | "md" | "lg" | "xl" | "xxl";
 }
 
 export interface ConfirmationModalProps {
@@ -140,14 +140,21 @@ export interface ExecutivesResponse {
 
 export interface Event {
     id: string;
-    title: string;
     date: string;
-    location: string;
     type: string;
+    title: string;
     image: string;
-    isPublished: boolean;
-    isFeatured: boolean;
+    location: string;
+    imageUrl: string;
     createdAt: string;
+    description: string;
+    isFeatured: boolean;
+    isPublished: boolean;
+}
+
+export interface EventsResponse {
+    data: Event[];
+    meta: { total: number };
 }
 
 export interface MagazineIssue {
