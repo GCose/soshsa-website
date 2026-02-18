@@ -1,30 +1,31 @@
 import { Search } from "lucide-react";
+import useDebounce from "@/utils/debounce";
+import { useState, useEffect } from "react";
 import { SearchBarProps } from "@/types/interface/dashboard";
+import Input from "./InputField";
 
 const SearchBar = ({ onSearch, className = "", ...props }: SearchBarProps) => {
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [searchValue, setSearchValue] = useState("");
+  const debouncedValue = useDebounce(searchValue, 500);
+
+  useEffect(() => {
     if (onSearch) {
-      onSearch(e.target.value);
+      onSearch(debouncedValue);
     }
-  };
+  }, [debouncedValue, onSearch]);
 
   return (
     <div className={`relative ${className}`}>
-      <div className="absolute top-1/2 -translate-y-1/2 text-gray-400">
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none z-10">
         <Search size={20} />
       </div>
-      <input
+
+      <Input
         type="text"
-        onChange={handleSearch}
-        className="
-         w-full pl-8 pr-4 py-2 bg-white border-b border-gray-300
-          text-gray-900 placeholder:text-gray-400
-          focus:outline-none focus-visible:outline-none
-          focus:border-teal-400
-          transition-colors
-        "
+        value={searchValue}
+        onChange={(e) => setSearchValue(e.target.value)}
+        className="pl-10 bg-gray-100! focus:bg-white!"
         placeholder="Search..."
-        style={{ boxShadow: "none", outline: "none" }}
         {...props}
       />
     </div>

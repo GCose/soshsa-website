@@ -1,45 +1,42 @@
-import { useState } from "react";
+import useSWR from "swr";
+import {
+  Council,
+  TableColumn,
+  CouncilsResponse,
+  DashboardPageProps,
+} from "@/types/interface/dashboard";
+import { NextApiRequest } from "next";
+import { BASE_URL } from "@/utils/url";
 import { useRouter } from "next/router";
+import { Toaster, toast } from "sonner";
+import axios, { AxiosError } from "axios";
+import { isLoggedIn } from "@/utils/auth";
+import { useState, useEffect } from "react";
+import { getErrorMessage } from "@/utils/error";
+import { renderStatusBadge } from "@/utils/badge";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import Sheet from "@/components/dashboard/ui/Sheet";
 import Table from "@/components/dashboard/ui/Table";
+import Button from "@/components/dashboard/ui/Button";
 import Input from "@/components/dashboard/ui/InputField";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { CustomError, ErrorResponseData } from "@/types";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
-import { Council, TableColumn } from "@/types/interface/dashboard";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
+import Textarea from "@/components/dashboard/ui/TextArea";
 
-const mockCouncils: Council[] = [
-  {
-    id: "1",
-    name: "20th Executive Members",
-    isActive: true,
-    createdAt: "2024-01-01",
-  },
-  {
-    id: "2",
-    name: "19th Executive Members",
-    isActive: false,
-    createdAt: "2023-01-01",
-  },
-];
-
-const mockExecutives = [
-  { id: "1", councilId: "1" },
-  { id: "2", councilId: "1" },
-  { id: "3", councilId: "1" },
-  { id: "4", councilId: "1" },
-  { id: "5", councilId: "2" },
-];
-
-const CouncilsPage = () => {
+const CouncilsPage = ({ adminData }: DashboardPageProps) => {
   const router = useRouter();
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
-  const [councils, setCouncils] = useState(mockCouncils);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [editingCouncil, setEditingCouncil] = useState<Council | null>(null);
   const [formData, setFormData] = useState({
     name: "",
+    description: "",
+    isActive: false,
   });
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -49,13 +46,37 @@ const CouncilsPage = () => {
     id: null,
   });
 
-  const filteredCouncils = councils.filter((council) =>
-    council.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  const fetchCouncils = async (): Promise<CouncilsResponse> => {
+    const { data } = await axios.get(`${BASE_URL}/councils`, {
+      params: { page: page - 1, limit, search: searchQuery },
+      headers: { Authorization: `Bearer ${adminData.token}` },
+    });
+    return data.data;
+  };
+
+  const { data, mutate, isLoading } = useSWR(
+    ["councils", adminData.token, page, limit, searchQuery],
+    fetchCouncils,
+    {
+      revalidateOnFocus: false,
+      onError: (error) => {
+        const { message } = getErrorMessage(
+          error as AxiosError<ErrorResponseData> | CustomError | Error,
+        );
+        toast.error("Failed to load councils", {
+          description: message,
+          duration: 4000,
+        });
+      },
+    },
   );
 
-  const getCouncilExecutivesCount = (councilId: string) => {
-    return mockExecutives.filter((exec) => exec.councilId === councilId).length;
-  };
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  const councils = data?.data ?? [];
+  const totalPages = data ? Math.ceil(data.meta.total / limit) : 0;
 
   const handleViewCouncil = (council: Council) => {
     router.push(`/admin/councils/${council.id}`);
@@ -64,10 +85,14 @@ const CouncilsPage = () => {
   const handleOpenSheet = (council?: Council) => {
     if (council) {
       setEditingCouncil(council);
-      setFormData({ name: council.name });
+      setFormData({
+        name: council.name,
+        description: council.description,
+        isActive: council.isActive,
+      });
     } else {
       setEditingCouncil(null);
-      setFormData({ name: "" });
+      setFormData({ name: "", description: "", isActive: false });
     }
     setSheetOpen(true);
   };
@@ -75,107 +100,98 @@ const CouncilsPage = () => {
   const handleCloseSheet = () => {
     setSheetOpen(false);
     setEditingCouncil(null);
-    setFormData({ name: "" });
+    setFormData({ name: "", description: "", isActive: false });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingCouncil) {
-      setCouncils(
-        councils.map((council) =>
-          council.id === editingCouncil.id
-            ? { ...council, name: formData.name }
-            : council,
-        ),
+    setSubmitting(true);
+
+    try {
+      if (editingCouncil) {
+        await axios.patch(
+          `${BASE_URL}/councils/${editingCouncil.id}`,
+          formData,
+          { headers: { Authorization: `Bearer ${adminData.token}` } },
+        );
+        toast.success("Council updated successfully");
+      } else {
+        await axios.post(`${BASE_URL}/councils`, formData, {
+          headers: { Authorization: `Bearer ${adminData.token}` },
+        });
+        toast.success("Council created successfully");
+      }
+      mutate();
+      handleCloseSheet();
+    } catch (error) {
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
       );
-    } else {
-      const newCouncil: Council = {
-        id: Date.now().toString(),
-        name: formData.name,
-        isActive: false,
-        createdAt: new Date().toISOString(),
-      };
-      setCouncils([...councils, newCouncil]);
+      toast.error(
+        editingCouncil
+          ? "Failed to update council"
+          : "Failed to create council",
+        {
+          description: message,
+          duration: 4000,
+        },
+      );
+    } finally {
+      setSubmitting(false);
     }
-    handleCloseSheet();
   };
 
-  const handleToggleActiveCouncil = (id: string) => {
-    setCouncils(
-      councils.map((council) =>
-        council.id === id
-          ? { ...council, isActive: true }
-          : { ...council, isActive: false },
-      ),
-    );
-  };
-
-  const handleDelete = (id: string) => {
-    setCouncils(councils.filter((council) => council.id !== id));
-    setDeleteModal({ isOpen: false, id: null });
+  const handleDelete = async (id: string) => {
+    try {
+      await axios.delete(`${BASE_URL}/councils/${id}`, {
+        headers: { Authorization: `Bearer ${adminData.token}` },
+      });
+      toast.success("Council deleted successfully");
+      mutate();
+    } catch (error) {
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error("Failed to delete council", {
+        description: message,
+        duration: 4000,
+      });
+    }
   };
 
   const columns: TableColumn<Council>[] = [
     {
       key: "name",
       label: "Council Name",
-      render: (value: string | boolean | undefined) => (
-        <span className="font-medium text-gray-900">{value}</span>
-      ),
+      render: (value) => <span className="font-medium">{value as string}</span>,
     },
     {
-      key: "id",
-      label: "Members",
-      render: (value: string | boolean | undefined) => (
-        <span className="text-gray-600">
-          {getCouncilExecutivesCount(value as string)} members
-        </span>
+      key: "description",
+      label: "Description",
+      render: (value) => (
+        <span className="line-clamp-2">{value as string}</span>
       ),
     },
     {
       key: "isActive",
       label: "Status",
-      render: (value: string | boolean | undefined) => (
-        <span>
-          {value ? (
-            <span className="inline-flex px-2.5 py-1 text-xs font-medium rounded border bg-green-100 text-green-700 border-green-300">
-              Active
-            </span>
-          ) : (
-            <span className="inline-flex px-2.5 py-1 text-xs font-medium rounded border bg-gray-100 text-gray-700 border-gray-300">
-              Inactive
-            </span>
-          )}
-        </span>
-      ),
+      render: (value) => renderStatusBadge(value as boolean),
     },
     {
       key: "createdAt",
       label: "Created",
-      render: (value: string | boolean | undefined) =>
+      render: (value) =>
         new Date(value as string).toLocaleDateString("en-GB", {
           year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          timeZone: "UTC",
+          month: "short",
+          day: "numeric",
         }),
     },
     {
       key: "id",
       label: "Actions",
-      render: (_value: string | boolean | undefined, row) => (
+      render: (_value, row) => (
         <div className="flex items-center gap-2">
-          {!row.isActive && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleActiveCouncil(row.id);
-              }}
-              className="cursor-pointer px-3 py-1.5 text-xs font-medium rounded bg-gray-200 text-gray-600 hover:bg-gray-300"
-            >
-              Set Active
-            </button>
-          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -189,10 +205,7 @@ const CouncilsPage = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setDeleteModal({
-                isOpen: true,
-                id: row.id,
-              });
+              setDeleteModal({ isOpen: true, id: row.id });
             }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
@@ -205,75 +218,138 @@ const CouncilsPage = () => {
   ];
 
   return (
-    <DashboardLayout pageTitle="Councils">
-      <div className="space-y-10">
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-          <SearchBar
-            placeholder="Search councils..."
-            onSearch={setSearchQuery}
-            className="max-w-lg"
+    <>
+      <Toaster position="top-right" richColors />
+      <DashboardLayout pageTitle="Councils" adminData={adminData}>
+        <div className="space-y-10">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <SearchBar
+              placeholder="Search councils..."
+              onSearch={setSearchQuery}
+              className="flex-1 max-w-md"
+            />
+
+            <Button
+              onClick={() => handleOpenSheet()}
+              leftIcon={<Plus size={20} />}
+            >
+              Add Council
+            </Button>
+          </div>
+
+          <Table
+            data={councils}
+            columns={columns}
+            loading={isLoading}
+            emptyMessage="No councils found"
+            onRowClick={handleViewCouncil}
+            pagination={{
+              page,
+              totalPages,
+              total: data?.meta.total,
+              onPageChange: setPage,
+            }}
           />
-          <button
-            onClick={() => handleOpenSheet()}
-            className="cursor-pointer flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={20} />
-            Add Council
-          </button>
         </div>
 
-        <Table
-          columns={columns}
-          data={filteredCouncils}
-          emptyMessage="No councils found"
-          onRowClick={handleViewCouncil}
+        <Sheet
+          isOpen={sheetOpen}
+          onClose={handleCloseSheet}
+          title={editingCouncil ? "Edit Council" : "Add Council"}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
+              label="Council Name"
+              type="text"
+              placeholder="e.g., 21st Executive Members"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              required
+            />
+
+            <div>
+              <Textarea
+                label="Description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                rows={4}
+                placeholder="Describe this council..."
+                required
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="isActive"
+                checked={formData.isActive}
+                onChange={(e) =>
+                  setFormData({ ...formData, isActive: e.target.checked })
+                }
+                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+              />
+              <label
+                htmlFor="isActive"
+                className="text-sm font-medium text-gray-700"
+              >
+                Active council
+              </label>
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <Button
+                type="submit"
+                variant="primary"
+                className="flex-1"
+                isLoading={submitting}
+              >
+                {editingCouncil ? "Update Council" : "Add Council"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={submitting}
+                onClick={handleCloseSheet}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Sheet>
+
+        <ConfirmationModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false, id: null })}
+          onConfirm={() => deleteModal.id && handleDelete(deleteModal.id)}
+          title="Delete Council"
+          message="Are you sure you want to delete this council? This action cannot be undone."
+          confirmText="Delete"
+          type="danger"
         />
-      </div>
-
-      <Sheet
-        isOpen={sheetOpen}
-        onClose={handleCloseSheet}
-        title={editingCouncil ? "Edit Council" : "Add Council"}
-      >
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Input
-            label="Council Name"
-            type="text"
-            placeholder="e.g., 21st Executive Members"
-            value={formData.name}
-            onChange={(e) => setFormData({ name: e.target.value })}
-            required
-          />
-
-          <div className="flex gap-4 pt-4">
-            <button
-              type="submit"
-              className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            >
-              {editingCouncil ? "Update Council" : "Add Council"}
-            </button>
-            <button
-              type="button"
-              onClick={handleCloseSheet}
-              className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Sheet>
-
-      <ConfirmationModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, id: null })}
-        onConfirm={() => deleteModal.id && handleDelete(deleteModal.id)}
-        title="Delete Council"
-        message="Are you sure you want to delete this council? This action cannot be undone."
-        confirmText="Delete"
-        type="danger"
-      />
-    </DashboardLayout>
+      </DashboardLayout>
+    </>
   );
+};
+
+export const getServerSideProps = async ({ req }: { req: NextApiRequest }) => {
+  const adminData = isLoggedIn(req);
+
+  if (!adminData) {
+    return {
+      redirect: {
+        destination: "/admin/auth/sign-in",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: { adminData },
+  };
 };
 
 export default CouncilsPage;

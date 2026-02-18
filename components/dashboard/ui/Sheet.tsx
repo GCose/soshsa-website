@@ -50,10 +50,10 @@ const Sheet = ({
       />
 
       <div
-        className={`ml-auto relative ${sizeClasses[size]} w-full h-full bg-white shadow-2xl flex flex-col animate-slide-in-right`}
+        className={`ml-auto relative ${sizeClasses[size]} w-full h-full bg-white transition-all duration-700 flex flex-col animate-slide-in-right`}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 shrink-0 bg-white">
+          <div className="flex items-center justify-between px-6 py-3 shrink-0 bg-white">
             <h2 className="text-xl font-bold text-gray-900">{title}</h2>
             <button
               onClick={onClose}
@@ -64,7 +64,7 @@ const Sheet = ({
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-6 py-6 bg-gray-50">
+        <div className="flex-1 overflow-y-auto px-6 py-6 bg-gray-100">
           {children}
         </div>
       </div>

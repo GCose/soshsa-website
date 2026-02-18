@@ -102,7 +102,7 @@ const SignInPage = () => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">
                 Welcome back
               </h2>
-              <p className="text-gray-500">Sign in to access your dashboard</p>
+              <p className="text-gray-500">Sign in to access the dashboard</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">

@@ -1,5 +1,6 @@
 import { TableProps } from "@/types/interface/dashboard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Button from "./Button";
 
 const Table = <T,>({
   columns,
@@ -17,10 +18,41 @@ const Table = <T,>({
     return index.toString();
   };
 
+  const getPageNumbers = () => {
+    if (!pagination) return [];
+
+    const { page, totalPages } = pagination;
+    const pages: (number | string)[] = [];
+
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (page <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (page >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = page - 1; i <= page + 1; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   const getShowingText = () => {
     if (!pagination || pagination.totalPages === 0) return null;
 
-    const limit = 30;
+    const limit = 10;
     const start = (pagination.page - 1) * limit + 1;
     const end = Math.min(pagination.page * limit, pagination.total || 0);
     const total = pagination.total || 0;
@@ -30,12 +62,12 @@ const Table = <T,>({
 
   return (
     <div>
-      <div className="bg-white dark:bg-navy/50 rounded-lg overflow-hidden relative">
+      <div className="bg-white-lg overflow-hidden relative rounded-lg">
         {loading && (
-          <div className="absolute inset-0 bg-white/80 dark:bg-navy/80 backdrop-blur-sm flex items-center justify-center z-10">
+          <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-4 border-navy/20 dark:border-white/20 border-t-navy dark:border-t-white rounded-full animate-spin"></div>
-              <p className="text-sm text-navy dark:text-white uppercase tracking-wider">
+              <div className="w-8 h-8 border-4 border-gray-200 border-t-primary-full animate-spin"></div>
+              <p className="text-sm text-gray-900 uppercase tracking-wider">
                 Loading...
               </p>
             </div>
@@ -45,7 +77,7 @@ const Table = <T,>({
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-teal-50">
+              <tr className="bg-teal-100/70">
                 {columns.map((column) => (
                   <th
                     key={column.key}
@@ -57,7 +89,7 @@ const Table = <T,>({
               </tr>
             </thead>
             <tbody>
-              {data.length === 0 ? (
+              {data.length === 0 && !loading ? (
                 <tr>
                   <td
                     colSpan={columns.length}
@@ -71,9 +103,9 @@ const Table = <T,>({
                   <tr
                     key={getRowKey(row, index)}
                     onClick={() => onRowClick?.(row)}
-                    className={`border-b border-teal-200 ${
+                    className={`even:bg-gray-100/60 ${
                       onRowClick
-                        ? "hover:bg-teal-100/35 active:bg-teal-100/50 cursor-pointer"
+                        ? "hover:bg-teal-50 active:bg-teal-50 cursor-pointer"
                         : ""
                     } transition-colors`}
                     style={{
@@ -99,28 +131,51 @@ const Table = <T,>({
       </div>
 
       {pagination && pagination.totalPages > 0 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm  /60">{getShowingText()}</p>
-          {pagination.totalPages > 1 && (
-            <div className="flex gap-2">
-              <button
-                onClick={() => pagination.onPageChange(pagination.page - 1)}
-                disabled={pagination.page === 1}
-                className="flex items-center gap-1 px-4 py-2 bg-white dark:bg-navy border border-black/10 dark:border-white/10 text-navy dark:text-white text-sm uppercase tracking-wider hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                <ChevronLeft size={16} />
-                Previous
-              </button>
-              <button
-                onClick={() => pagination.onPageChange(pagination.page + 1)}
-                disabled={pagination.page === pagination.totalPages}
-                className="flex items-center gap-1 px-4 py-2 bg-white dark:bg-navy border border-black/10 dark:border-white/10 text-navy dark:text-white text-sm uppercase tracking-wider hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                Next
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          )}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+          <p className="text-sm text-gray-600">{getShowingText()}</p>
+
+          <div className="flex items-center gap-1">
+            <Button
+              variant="secondary"
+              onClick={() => pagination.onPageChange(pagination.page - 1)}
+              disabled={pagination.page === 1}
+              className="transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              title="Previous page"
+            >
+              <ChevronLeft size={16} />
+            </Button>
+
+            {getPageNumbers().map((pageNum, idx) =>
+              pageNum === "..." ? (
+                <span key={`ellipsis-${idx}`} className="text-gray-500">
+                  ...
+                </span>
+              ) : (
+                <Button
+                  variant="secondary"
+                  key={pageNum}
+                  onClick={() => pagination.onPageChange(pageNum as number)}
+                  className={`${
+                    pagination.page === pageNum
+                      ? "bg-primary text-white"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  {pageNum}
+                </Button>
+              ),
+            )}
+
+            <Button
+              variant="secondary"
+              onClick={() => pagination.onPageChange(pagination.page + 1)}
+              disabled={pagination.page === pagination.totalPages}
+              className="text-gray-700 text-sm hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              title="Next page"
+            >
+              <ChevronRight size={16} />
+            </Button>
+          </div>
         </div>
       )}
     </div>

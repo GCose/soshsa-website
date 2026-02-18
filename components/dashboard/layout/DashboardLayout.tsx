@@ -23,8 +23,18 @@ import {
   Download,
 } from "lucide-react";
 import { DashboardLayoutProps } from "@/types/interface/dashboard";
+import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
+import { AdminAuth } from "@/types";
 
-const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
+interface DashboardLayoutWithAuthProps extends DashboardLayoutProps {
+  adminData?: AdminAuth;
+}
+
+const DashboardLayout = ({
+  children,
+  pageTitle,
+  adminData,
+}: DashboardLayoutWithAuthProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("sidebarOpen");
@@ -34,6 +44,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
   });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -105,6 +116,17 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
     return router.pathname.startsWith(href);
   };
 
+  const handleLogout = () => {
+    setLogoutModalOpen(false);
+    setDropdownOpen(false);
+    window.location.href = "/api/admin/logout";
+  };
+
+  const displayName = adminData
+    ? `${adminData.firstName} ${adminData.lastName}`
+    : "Admin User";
+  const displayEmail = adminData?.email || "admin@soshsa.com";
+
   useEffect(() => {
     localStorage.setItem("sidebarOpen", sidebarOpen.toString());
   }, [sidebarOpen]);
@@ -128,7 +150,10 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
       <Head>
         <title>{`SoSHSA Admin | ${pageTitle}`}</title>
       </Head>
-      <div className="min-h-screen bg-white style={{ fontFamily: 'Inter, sans-serif' }  ">
+      <div
+        className="min-h-screen bg-white"
+        style={{ fontFamily: "Inter, sans-serif" }}
+      >
         {mobileSidebarOpen && (
           <div
             onClick={() => setMobileSidebarOpen(false)}
@@ -195,7 +220,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
                         className={`flex items-center gap-3 px-3 py-2.5 rounded transition-colors ${
                           active
                             ? "text-teal-500 bg-teal-100/70"
-                            : "text-gray-700 hover:bg-gray-100"
+                            : "text-gray-700 hover:bg-teal-50"
                         } ${!sidebarOpen && "justify-center"}`}
                         title={!sidebarOpen ? item.name : ""}
                       >
@@ -242,9 +267,9 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
                 </div>
                 <div className="text-left hidden sm:block">
                   <p className="text-sm font-medium text-gray-900">
-                    Admin User
+                    {displayName}
                   </p>
-                  <p className="text-xs text-gray-500">admin@soshsa.com</p>
+                  <p className="text-xs text-gray-500">{displayEmail}</p>
                 </div>
                 <ChevronDown
                   size={16}
@@ -258,9 +283,9 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg border border-gray-200 shadow-lg py-2">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-medium text-gray-900">
-                      Admin User
+                      {displayName}
                     </p>
-                    <p className="text-xs text-gray-500">admin@soshsa.com</p>
+                    <p className="text-xs text-gray-500">{displayEmail}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -275,7 +300,7 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
                   <button
                     onClick={() => {
                       setDropdownOpen(false);
-                      window.location.href = "/api/admin/logout";
+                      setLogoutModalOpen(true);
                     }}
                     className="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
@@ -290,6 +315,17 @@ const DashboardLayout = ({ children, pageTitle }: DashboardLayoutProps) => {
           <main className="p-4 lg:p-8 bg-white">{children}</main>
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        onConfirm={handleLogout}
+        title="Logout"
+        message="Are you sure you want to logout? You will need to sign in again to access the dashboard."
+        confirmText="Logout"
+        cancelText="Cancel"
+        type="warning"
+      />
     </>
   );
 };

@@ -1,56 +1,13 @@
 import { AdminAuth, ColumnKey } from "..";
-import { InputHTMLAttributes, ReactNode } from "react";
-
-export interface DashboardLayoutProps {
-    children: ReactNode
-    pageTitle: string
-}
-
-export interface DashboardPageProps {
-    adminData: AdminAuth;
-}
-
-export interface StatsCardProps {
-    title: string;
-    value: string | number;
-    icon: React.ReactNode;
-}
-
-export interface DashboardStats {
-    courses: {
-        total: number;
-        active: number;
-        inactive: number;
-    };
-    inbox: {
-        total: number;
-        pending: number;
-        read: number;
-        resolved: number;
-    };
-    newsArticles: {
-        total: number;
-        published: number;
-    };
-    magazines: {
-        total: number;
-        published: number;
-    };
-}
-
-export interface InboxMessage {
-    id: string;
-    fullName: string;
-    email: string;
-    phone: string;
-    subject: string;
-    message: string;
-    status: "PENDING" | "READ" | "RESOLVED";
-    createdAt: string;
-    updatedAt: string;
-}
+import { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+    label?: string;
+    error?: string;
+    helperText?: string;
+}
+
+export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
     label?: string;
     error?: string;
     helperText?: string;
@@ -59,6 +16,15 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export interface SearchBarProps
     extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
     onSearch?: (value: string) => void;
+}
+
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: "primary" | "secondary" | "danger" | "ghost";
+    size?: "sm" | "md" | "lg";
+    isLoading?: boolean;
+    leftIcon?: ReactNode;
+    rightIcon?: ReactNode;
+    children: ReactNode;
 }
 
 export interface TableColumn<T> {
@@ -70,7 +36,6 @@ export interface TableColumn<T> {
         index?: number
     ) => React.ReactNode;
 }
-
 
 export interface TableProps<T> {
     columns: TableColumn<T>[];
@@ -105,23 +70,67 @@ export interface ConfirmationModalProps {
     type?: "danger" | "warning" | "info";
 }
 
-export interface Executive {
+export interface DashboardLayoutProps {
+    children: ReactNode
+    pageTitle: string
+}
+
+export interface DashboardPageProps {
+    adminData: AdminAuth;
+}
+
+export interface StatsCardProps {
+    title: string;
+    value: string | number;
+    icon: React.ReactNode;
+}
+
+export interface DashboardStats {
+    totalEvents: number;
+    totalNews: number;
+    totalMagazines: number;
+    totalCourses: number;
+}
+
+export interface InboxMessage {
     id: string;
-    name: string;
-    position: string;
-    biography?: string;
-    image: string;
-    isActive: boolean;
-    councilId: string;
-    councilName?: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    subject: string;
+    message: string;
+    status: "PENDING" | "READ" | "RESOLVED";
     createdAt: string;
+    updatedAt: string;
 }
 
 export interface Council {
     id: string;
     name: string;
+    description: string;
     isActive: boolean;
     createdAt: string;
+    updatedAt: string;
+}
+
+export interface CouncilsResponse {
+    data: Council[];
+    meta: { total: number };
+}
+
+export interface Executive {
+    id: string;
+    fullName: string;
+    position: string;
+    biography?: string;
+    profilePhoto?: string;
+    isServing: boolean;
+    council: {
+        _id: string;
+        name: string;
+    };
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Event {

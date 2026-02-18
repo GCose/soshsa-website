@@ -16,7 +16,7 @@ import {
 } from "@/types/interface/dashboard";
 import { CustomError, ErrorResponseData } from "@/types";
 import StatsCard from "@/components/dashboard/ui/StatsCard";
-import { BookOpen, Book, Mail, Newspaper } from "lucide-react";
+import { BookOpen, Book, Newspaper, Calendar } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import DashboardSkeleton from "@/components/dashboard/skeletons/DashboardPageSkeleton";
 
@@ -28,7 +28,7 @@ const fetchStats = async (token: string): Promise<DashboardStats> => {
 };
 
 const fetchRecentInbox = async (token: string): Promise<InboxMessage[]> => {
-  const { data } = await axios.get(`${BASE_URL}/inbox?page=0&limit=5`, {
+  const { data } = await axios.get(`${BASE_URL}/inbox?page=0&limit=10`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return data.data.data;
@@ -125,31 +125,31 @@ const DashboardPage = ({ adminData }: DashboardPageProps) => {
   return (
     <>
       <Toaster position="top-right" richColors />
-      <DashboardLayout pageTitle="Dashboard">
+      <DashboardLayout pageTitle="Dashboard" adminData={adminData}>
         {isLoading ? (
           <DashboardSkeleton />
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-15">
               <StatsCard
+                title="Total Events"
+                value={stats?.totalEvents ?? 0}
+                icon={<Calendar size={24} />}
+              />
+              <StatsCard
                 title="News Articles"
-                value={stats?.newsArticles?.total ?? 0}
+                value={stats?.totalNews ?? 0}
                 icon={<Newspaper size={24} />}
               />
               <StatsCard
                 title="Magazine Issues"
-                value={stats?.magazines?.total ?? 0}
+                value={stats?.totalMagazines ?? 0}
                 icon={<BookOpen size={24} />}
               />
               <StatsCard
                 title="Total Courses"
-                value={stats?.courses?.total ?? 0}
+                value={stats?.totalCourses ?? 0}
                 icon={<Book size={24} />}
-              />
-              <StatsCard
-                title="Pending Messages"
-                value={stats?.inbox?.pending ?? 0}
-                icon={<Mail size={24} />}
               />
             </div>
 

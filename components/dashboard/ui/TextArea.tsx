@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
-import { InputProps } from "@/types/interface/dashboard";
+import { TextareaProps } from "@/types/interface/dashboard";
 
-const Input = forwardRef<HTMLInputElement, InputProps>(
+const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ label, error, helperText, className = "", ...props }, ref) => {
     return (
       <div className="w-full">
@@ -11,7 +11,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {props.required && <span className="text-red-500 ml-1">*</span>}
           </label>
         )}
-        <input
+        <textarea
           ref={ref}
           style={{ boxShadow: "none", outline: "none" }}
           className={`
@@ -19,8 +19,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             bg-white border border-gray-300/0 rounded-lg
             text-gray-900 placeholder:text-gray-400
             focus:outline-none focus-visible:outline-none
-          focus:border-teal-400 disabled:text-gray-500 disabled:cursor-not-allowed
-            transition-colors
+            focus:border-teal-400 disabled:text-gray-500 disabled:cursor-not-allowed
+            transition-colors resize-none
             ${
               error
                 ? "border-red-500 focus:ring-red-500/20 focus:border-red-500"
@@ -36,9 +36,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
-Input.displayName = "Input";
+Textarea.displayName = "Textarea";
 
-export default Input;
+export default Textarea;
