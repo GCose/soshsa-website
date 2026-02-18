@@ -111,7 +111,7 @@ const Footer = () => {
                       {link.label}
                     </Link>
                   </li>
-                )
+                ),
               )}
             </ul>
           </div>
@@ -132,7 +132,7 @@ const Footer = () => {
               <li className="text-sm text-gray-300">
                 University of The Gambia
                 <br />
-                Brikama Campus
+                Faraba Campus
               </li>
             </ul>
           </div>

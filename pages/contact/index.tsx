@@ -16,7 +16,7 @@ const ContactPage = () => {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     setFormData({
       ...formData,
@@ -88,7 +88,7 @@ const ContactPage = () => {
                   <p className="text-xl text-gray-900">
                     University of The Gambia
                     <br />
-                    Brikama Campus
+                    Faraba Campus
                   </p>
                 </div>
 
