@@ -133,6 +133,11 @@ export interface Executive {
     updatedAt: string;
 }
 
+export interface ExecutivesResponse {
+    data: Executive[];
+    meta: { total: number };
+}
+
 export interface Event {
     id: string;
     title: string;

@@ -80,7 +80,7 @@ const Sheet = ({
         }
 
         .animate-slide-in-right {
-          animation: slide-in-right 0.3s ease-out;
+          animation: slide-in-right 0.4s ease-out;
         }
       `}</style>
     </div>

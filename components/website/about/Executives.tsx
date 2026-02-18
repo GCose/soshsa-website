@@ -90,7 +90,7 @@ const Executives = () => {
                     </div>
                   </div>
                 </div>
-                <p className="text-gray-600 leading-relaxed">{exec.bio}</p>
+                {/* <p className="text-gray-600 leading-relaxed">{exec.bio}</p> */}
               </div>
             </motion.div>
           ))}

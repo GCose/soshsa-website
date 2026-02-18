@@ -162,7 +162,7 @@ const DashboardLayout = ({
         )}
 
         <aside
-          className={`fixed top-0 left-0 z-40 h-full overflow-y-auto transition-all duration-300 bg-gray-50 md:bg-gray-100/60 rounded-tr-[3rem] rounded-br-[3rem]
+          className={`fixed top-0 left-0 z-40 h-full overflow-y-auto transition-all duration-300 bg-gray-50 lg:bg-gray-100/60 rounded-tr-[3rem] rounded-br-[3rem]
             ${sidebarOpen ? "w-64" : "w-20"} 
             ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
             lg:translate-x-0`}
