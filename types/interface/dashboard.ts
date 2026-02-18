@@ -157,15 +157,36 @@ export interface EventsResponse {
     meta: { total: number };
 }
 
-export interface MagazineIssue {
+export interface NewsArticle {
+    id: string;
+    title: string;
+    excerpt: string;
+    content?: string;
+    author: string;
+    imageUrl: string;
+    isPublished: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface NewsResponse {
+    data: NewsArticle[];
+    meta: { total: number };
+}
+
+export interface Magazine {
     id: string;
     title: string;
     year: string;
-    coverImage: string;
-    articlesCount: number;
+    coverImageUrl: string;
     isPublished: boolean;
-    publishedAt: string;
     createdAt: string;
+    updatedAt: string;
+}
+
+export interface MagazinesResponse {
+    data: Magazine[];
+    meta: { total: number };
 }
 
 export interface Comment {
@@ -205,17 +226,6 @@ export interface SheetProps {
     title?: string;
     children: ReactNode;
     size?: "sm" | "md" | "lg" | "xl" | "full";
-}
-
-export interface NewsArticle {
-    id: string;
-    title: string;
-    excerpt: string;
-    author: string;
-    image: string;
-    isPublished: boolean;
-    publishedAt: string;
-    createdAt: string;
 }
 
 export interface Article {

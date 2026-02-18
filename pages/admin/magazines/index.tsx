@@ -1,61 +1,47 @@
+import useSWR from "swr";
 import Image from "next/image";
-import { useState } from "react";
-import { useRouter } from "next/router";
-// import { GetServerSideProps } from "next";
+import {
+  Magazine,
+  TableColumn,
+  MagazinesResponse,
+  DashboardPageProps,
+} from "@/types/interface/dashboard";
+import { NextApiRequest } from "next";
+import { Toaster, toast } from "sonner";
+import axios, { AxiosError } from "axios";
+import { isLoggedIn } from "@/utils/auth";
+import { useState, useCallback } from "react";
+import { getErrorMessage } from "@/utils/error";
 import Sheet from "@/components/dashboard/ui/Sheet";
 import Table from "@/components/dashboard/ui/Table";
 import { renderPublishedBadge } from "@/utils/badge";
+import Button from "@/components/dashboard/ui/Button";
+import { BASE_URL, JEETIX_BASE_URL } from "@/utils/url";
 import Input from "@/components/dashboard/ui/InputField";
-import SearchBar from "@/components/dashboard/ui/SearchBar";
 import { Plus, Edit, Trash2, Upload } from "lucide-react";
-import { MagazineIssue, TableColumn } from "@/types/interface/dashboard";
+import SearchBar from "@/components/dashboard/ui/SearchBar";
+import { CustomError, ErrorResponseData, FilterStatus } from "@/types";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
 
-const mockMagazines: MagazineIssue[] = [
-  {
-    id: "10",
-    title: "Issue 10",
-    year: "2024",
-    coverImage: "/images/home/magazine-1.jpg",
-    articlesCount: 8,
-    isPublished: true,
-    publishedAt: "2024-01-15",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "11",
-    title: "Issue 11",
-    year: "2024",
-    coverImage: "/images/home/magazine-2.jpg",
-    articlesCount: 6,
-    isPublished: true,
-    publishedAt: "2024-01-10",
-    createdAt: "2024-01-10",
-  },
-  {
-    id: "12",
-    title: "Issue 12",
-    year: "2023",
-    coverImage: "/images/home/magazine-3.jpg",
-    articlesCount: 0,
-    isPublished: false,
-    publishedAt: "",
-    createdAt: "2024-01-05",
-  },
-];
-
-const MagazinePage = () => {
-  const router = useRouter();
+const MagazinesPage = ({ adminData }: DashboardPageProps) => {
+  const [editingMagazine, setEditingMagazine] = useState<Magazine | null>(null);
+  const [viewingMagazine, setViewingMagazine] = useState<Magazine | null>(null);
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [magazines, setMagazines] = useState(mockMagazines);
-  const [issueSheetOpen, setIssueSheetOpen] = useState(false);
-  const [editingIssue, setEditingIssue] = useState<MagazineIssue | null>(null);
-  const [coverImagePreview, setCoverImagePreview] = useState("");
-  const [issueFormData, setIssueFormData] = useState({
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(15);
+  const [formData, setFormData] = useState({
     title: "",
     year: "",
-    isPublished: false,
+    coverImageUrl: "",
+    isPublished: true,
   });
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -65,72 +51,214 @@ const MagazinePage = () => {
     id: null,
   });
 
-  const filteredMagazines = magazines.filter(
-    (mag) =>
-      mag.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      mag.year.includes(searchQuery),
+  const fetchMagazines = async (): Promise<MagazinesResponse> => {
+    const params: Record<string, string | number> = {
+      page: page - 1,
+      limit,
+      search: searchQuery,
+    };
+
+    if (filterStatus === "published") params.isPublished = "true";
+    if (filterStatus === "draft") params.isPublished = "false";
+
+    const { data } = await axios.get(`${BASE_URL}/magazines`, {
+      params,
+      headers: { Authorization: `Bearer ${adminData.token}` },
+    });
+    return data.data;
+  };
+
+  const { data, mutate, isLoading } = useSWR(
+    ["magazines", adminData.token, page, limit, searchQuery, filterStatus],
+    fetchMagazines,
+    {
+      revalidateOnFocus: false,
+      onError: (error) => {
+        const { message } = getErrorMessage(
+          error as AxiosError<ErrorResponseData> | CustomError | Error,
+        );
+        toast.error("Failed to load magazines", {
+          description: message,
+          duration: 4000,
+        });
+      },
+    },
   );
 
-  const handleRowClick = (issue: MagazineIssue) => {
-    router.push(`/admin/magazines/${issue.id}/articles`);
+  const magazines = data?.data ?? [];
+  const totalPages = data ? Math.ceil(data.meta.total / limit) : 0;
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  }, []);
+
+  const handleView = (magazine: Magazine) => {
+    setViewingMagazine(magazine);
+    setViewSheetOpen(true);
   };
 
-  const handleOpenIssueSheet = (issue?: MagazineIssue) => {
-    if (issue) {
-      setEditingIssue(issue);
-      setIssueFormData({
-        title: issue.title,
-        year: issue.year,
-        isPublished: issue.isPublished,
+  const handleOpenSheet = (magazine?: Magazine) => {
+    if (magazine) {
+      setEditingMagazine(magazine);
+      setFormData({
+        title: magazine.title,
+        year: magazine.year,
+        coverImageUrl: magazine.coverImageUrl,
+        isPublished: magazine.isPublished,
       });
-      setCoverImagePreview(issue.coverImage);
+      setImagePreview(magazine.coverImageUrl);
+      setImageFile(null);
     } else {
-      setEditingIssue(null);
-      setIssueFormData({
+      setEditingMagazine(null);
+      setFormData({
         title: "",
         year: new Date().getFullYear().toString(),
-        isPublished: false,
+        coverImageUrl: "",
+        isPublished: true,
       });
-      setCoverImagePreview("");
+      setImagePreview("");
+      setImageFile(null);
     }
-    setIssueSheetOpen(true);
+    setSheetOpen(true);
   };
 
-  const handleCloseIssueSheet = () => {
-    setIssueSheetOpen(false);
-    setEditingIssue(null);
-    setCoverImagePreview("");
+  const handleCloseSheet = () => {
+    setSheetOpen(false);
+    setEditingMagazine(null);
+    setFormData({
+      title: "",
+      year: new Date().getFullYear().toString(),
+      coverImageUrl: "",
+      isPublished: true,
+    });
+    setImagePreview("");
+    setImageFile(null);
   };
 
-  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setCoverImagePreview(reader.result as string);
+        setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleIssueSubmit = (e: React.FormEvent) => {
+  const uploadImageToJeetix = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "soshsa/magazines");
+
+    const { data } = await axios.post(
+      `${JEETIX_BASE_URL}/api/storage/upload`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+
+    return data.data.fileUrl;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Issue submitted:", issueFormData);
-    handleCloseIssueSheet();
+    setSubmitting(true);
+
+    try {
+      let coverImageUrl = formData.coverImageUrl;
+
+      if (imageFile) {
+        setUploadingImage(true);
+        toast.loading("Uploading cover image...", { id: "upload-toast" });
+        coverImageUrl = await uploadImageToJeetix(imageFile);
+        toast.dismiss("upload-toast");
+        setUploadingImage(false);
+      }
+
+      if (!coverImageUrl) {
+        toast.error("Cover image is required");
+        setSubmitting(false);
+        return;
+      }
+
+      const payload = {
+        ...formData,
+        coverImageUrl,
+      };
+
+      const actionText = editingMagazine ? "Updating" : "Creating";
+      toast.loading(`${actionText} magazine...`, { id: "action-toast" });
+
+      if (editingMagazine) {
+        await axios.patch(
+          `${BASE_URL}/magazines/${editingMagazine.id}`,
+          payload,
+          {
+            headers: { Authorization: `Bearer ${adminData.token}` },
+          },
+        );
+        toast.dismiss("action-toast");
+        toast.success("Magazine updated successfully");
+      } else {
+        await axios.post(`${BASE_URL}/magazines`, payload, {
+          headers: { Authorization: `Bearer ${adminData.token}` },
+        });
+        toast.dismiss("action-toast");
+        toast.success("Magazine created successfully");
+      }
+      mutate();
+      handleCloseSheet();
+    } catch (error) {
+      toast.dismiss("upload-toast");
+      toast.dismiss("action-toast");
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error(
+        editingMagazine
+          ? "Failed to update magazine"
+          : "Failed to create magazine",
+        {
+          description: message,
+          duration: 4000,
+        },
+      );
+    } finally {
+      setSubmitting(false);
+      setUploadingImage(false);
+    }
   };
 
-  const handleDeleteIssue = (id: string) => {
-    setMagazines(magazines.filter((mag) => mag.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await axios.delete(`${BASE_URL}/magazines/${id}`, {
+        headers: { Authorization: `Bearer ${adminData.token}` },
+      });
+      toast.success("Magazine deleted successfully");
+      mutate();
+    } catch (error) {
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error("Failed to delete magazine", {
+        description: message,
+        duration: 4000,
+      });
+    }
   };
 
-  const issueColumns: TableColumn<MagazineIssue>[] = [
+  const columns: TableColumn<Magazine>[] = [
     {
-      key: "coverImage",
+      key: "coverImageUrl",
       label: "Cover",
-      render: (value: string | boolean | number | undefined, row) => (
+      render: (value, row) => (
         <div className="w-16 h-20 rounded overflow-hidden bg-gray-200 relative">
           <Image
-            src={value as string}
+            src={(value as string) || "/placeholder.png"}
             alt={row.title}
             fill
             className="object-cover"
@@ -140,52 +268,27 @@ const MagazinePage = () => {
     },
     {
       key: "title",
-      label: "Issue",
-      render: (value: string | boolean | number | undefined) => (
-        <span className="font-medium text-gray-900">{value}</span>
-      ),
+      label: "Title",
+      render: (value) => <span className="font-medium">{value as string}</span>,
     },
     {
       key: "year",
       label: "Year",
     },
     {
-      key: "articlesCount",
-      label: "Articles",
-      render: (value: string | boolean | number | undefined) => (
-        <span className="text-gray-700">
-          {value} {value === 1 ? "article" : "articles"}
-        </span>
-      ),
-    },
-    {
-      key: "publishedAt",
-      label: "Published",
-      render: (value: string | boolean | number | undefined) =>
-        value
-          ? new Date(value as string).toLocaleDateString("en-GB", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              timeZone: "UTC",
-            })
-          : "-",
-    },
-    {
       key: "isPublished",
       label: "Status",
-      render: (value: string | boolean | number | undefined) =>
-        renderPublishedBadge(value as boolean),
+      render: (value) => renderPublishedBadge(value as boolean),
     },
     {
       key: "id",
       label: "Actions",
-      render: (_value: string | boolean | number | undefined, row) => (
+      render: (_value, row) => (
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
-              handleOpenIssueSheet(row);
+              handleOpenSheet(row);
             }}
             className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Edit"
@@ -195,10 +298,7 @@ const MagazinePage = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setDeleteModal({
-                isOpen: true,
-                id: row.id,
-              });
+              setDeleteModal({ isOpen: true, id: row.id });
             }}
             className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
@@ -211,172 +311,281 @@ const MagazinePage = () => {
   ];
 
   return (
-    <DashboardLayout pageTitle="Magazine">
-      <div className="space-y-10">
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-          <SearchBar
-            className="max-w-md"
-            onSearch={setSearchQuery}
-            placeholder="Search issues..."
-          />
-          <button
-            onClick={() => handleOpenIssueSheet()}
-            className="cursor-pointer flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={20} />
-            Add Issue
-          </button>
-        </div>
+    <>
+      <Toaster position="top-right" richColors />
+      <DashboardLayout pageTitle="Magazines" adminData={adminData}>
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <SearchBar
+              placeholder="Search magazines..."
+              onSearch={handleSearch}
+              className="flex-1 max-w-md"
+            />
 
-        <Table
-          columns={issueColumns}
-          data={filteredMagazines}
-          emptyMessage="No magazine issues found"
-          onRowClick={handleRowClick}
-        />
-      </div>
+            <Button
+              onClick={() => handleOpenSheet()}
+              leftIcon={<Plus size={20} />}
+            >
+              Add Magazine
+            </Button>
+          </div>
 
-      <Sheet
-        isOpen={issueSheetOpen}
-        onClose={handleCloseIssueSheet}
-        title={editingIssue ? "Edit Magazine Issue" : "Add Magazine Issue"}
-      >
-        <form onSubmit={handleIssueSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Cover Image
-            </label>
-            <div className="flex items-start gap-6">
-              {coverImagePreview ? (
-                <div className="w-48 h-64 rounded-lg overflow-hidden bg-gray-200 relative">
-                  <Image
-                    src={coverImagePreview}
-                    alt="Cover Preview"
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                </div>
-              ) : (
-                <div className="w-48 h-64 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <Upload size={32} className="text-gray-400" />
-                </div>
-              )}
-              <div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleCoverImageChange}
-                  className="hidden"
-                  id="cover-image-upload"
-                />
-                <label
-                  htmlFor="cover-image-upload"
-                  className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <Upload size={16} />
-                  Upload Cover
-                </label>
-                <p className="text-xs text-gray-500 mt-2">
-                  Recommended: 800x1200px
-                </p>
-              </div>
+          <div className="flex flex-col items-center sm:flex-row gap-4 pt-6">
+            <div>
+              <h3 className="font-medium text-gray-900">Filters:</h3>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={filterStatus === "all" ? "primary" : "secondary"}
+                onClick={() => {
+                  setFilterStatus("all");
+                  setPage(1);
+                }}
+              >
+                All
+              </Button>
+              <Button
+                variant={filterStatus === "published" ? "primary" : "secondary"}
+                onClick={() => {
+                  setFilterStatus("published");
+                  setPage(1);
+                }}
+              >
+                Published
+              </Button>
+              <Button
+                variant={filterStatus === "draft" ? "primary" : "secondary"}
+                onClick={() => {
+                  setFilterStatus("draft");
+                  setPage(1);
+                }}
+              >
+                Draft
+              </Button>
             </div>
           </div>
 
-          <Input
-            label="Issue Title"
-            type="text"
-            placeholder="e.g., Issue 13"
-            value={issueFormData.title}
-            onChange={(e) =>
-              setIssueFormData({ ...issueFormData, title: e.target.value })
-            }
-            required
+          <Table
+            columns={columns}
+            data={magazines}
+            loading={isLoading}
+            emptyMessage="No magazines found"
+            onRowClick={handleView}
+            pagination={{
+              page,
+              totalPages,
+              total: data?.meta.total,
+              onPageChange: setPage,
+            }}
           />
+        </div>
 
-          <Input
-            label="Year"
-            type="text"
-            placeholder="e.g., 2024"
-            value={issueFormData.year}
-            onChange={(e) =>
-              setIssueFormData({ ...issueFormData, year: e.target.value })
-            }
-            required
-          />
+        <Sheet
+          isOpen={viewSheetOpen}
+          onClose={() => setViewSheetOpen(false)}
+          title="Magazine Details"
+        >
+          {viewingMagazine && (
+            <div className="space-y-6">
+              <div className="w-full aspect-3/4 rounded-lg bg-gray-200 relative overflow-hidden">
+                <Image
+                  src={viewingMagazine.coverImageUrl}
+                  alt={viewingMagazine.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
 
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="isPublished"
-              checked={issueFormData.isPublished}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Title
+                  </label>
+                  <p className="text-gray-900 font-medium text-lg">
+                    {viewingMagazine.title}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Year
+                  </label>
+                  <p className="text-gray-900">{viewingMagazine.year}</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Status
+                  </label>
+                  {renderPublishedBadge(viewingMagazine.isPublished)}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={() => {
+                    setViewSheetOpen(false);
+                    handleOpenSheet(viewingMagazine);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setViewSheetOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </Sheet>
+
+        <Sheet
+          isOpen={sheetOpen}
+          onClose={handleCloseSheet}
+          title={editingMagazine ? "Edit Magazine" : "Add Magazine"}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Cover Image <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-start gap-6">
+                {imagePreview ? (
+                  <div className="w-48 h-64 rounded-lg overflow-hidden bg-gray-200 relative">
+                    <Image
+                      src={imagePreview}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                ) : (
+                  <div className="w-48 h-64 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <Upload size={32} className="text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="image-upload"
+                    required={!editingMagazine && !imagePreview}
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <Upload size={16} />
+                    {imagePreview ? "Change Cover" : "Upload Cover"}
+                  </label>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Recommended: 800x1000px
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Input
+              label="Magazine Title"
+              type="text"
+              placeholder="Enter magazine title"
+              value={formData.title}
               onChange={(e) =>
-                setIssueFormData({
-                  ...issueFormData,
-                  isPublished: e.target.checked,
-                })
+                setFormData({ ...formData, title: e.target.value })
               }
-              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+              required
             />
-            <label
-              htmlFor="isPublished"
-              className="text-sm font-medium text-gray-700"
-            >
-              Publish immediately
-            </label>
-          </div>
 
-          <div className="flex gap-4 pt-4">
-            <button
-              type="submit"
-              className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            >
-              {editingIssue ? "Update Issue" : "Add Issue"}
-            </button>
-            <button
-              type="button"
-              onClick={handleCloseIssueSheet}
-              className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Sheet>
+            <Input
+              label="Year"
+              type="text"
+              placeholder="2024"
+              value={formData.year}
+              onChange={(e) =>
+                setFormData({ ...formData, year: e.target.value })
+              }
+              required
+            />
 
-      <ConfirmationModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, id: null })}
-        onConfirm={() => {
-          if (deleteModal.id) {
-            handleDeleteIssue(deleteModal.id);
-          }
-        }}
-        title="Delete Magazine Issue"
-        message="Are you sure you want to delete this magazine issue? This will also delete all articles within it. This action cannot be undone."
-        confirmText="Delete"
-        type="danger"
-      />
-    </DashboardLayout>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="isPublished"
+                checked={formData.isPublished}
+                onChange={(e) =>
+                  setFormData({ ...formData, isPublished: e.target.checked })
+                }
+                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+              />
+              <label
+                htmlFor="isPublished"
+                className="text-sm font-medium text-gray-700"
+              >
+                Publish immediately
+              </label>
+            </div>
+
+            <div className="flex gap-4 pt-4">
+              <Button
+                type="submit"
+                variant="primary"
+                className="flex-1"
+                isLoading={submitting || uploadingImage}
+              >
+                {uploadingImage
+                  ? "Uploading Image..."
+                  : editingMagazine
+                    ? "Update Magazine"
+                    : "Add Magazine"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={submitting || uploadingImage}
+                onClick={handleCloseSheet}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Sheet>
+
+        <ConfirmationModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false, id: null })}
+          onConfirm={() => deleteModal.id && handleDelete(deleteModal.id)}
+          title="Delete Magazine"
+          message="Are you sure you want to delete this magazine? This action cannot be undone."
+          confirmText="Delete"
+          type="danger"
+        />
+      </DashboardLayout>
+    </>
   );
 };
 
-// export const getServerSideProps: GetServerSideProps = async (context) => {
-//   const token = context.req.cookies.token || null;
+export const getServerSideProps = async ({ req }: { req: NextApiRequest }) => {
+  const adminData = isLoggedIn(req);
 
-//   if (!token) {
-//     return {
-//       redirect: {
-//         destination: "/admin/auth/sign-in",
-//         permanent: false,
-//       },
-//     };
-//   }
+  if (!adminData) {
+    return {
+      redirect: {
+        destination: "/admin/auth/sign-in",
+        permanent: false,
+      },
+    };
+  }
 
-//   return {
-//     props: {},
-//   };
-// };
+  return {
+    props: { adminData },
+  };
+};
 
-export default MagazinePage;
+export default MagazinesPage;

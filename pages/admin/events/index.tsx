@@ -37,7 +37,7 @@ const EventsPage = ({ adminData }: DashboardPageProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit] = useState(15);
   const [formData, setFormData] = useState({
     title: "",
     type: "",
@@ -364,7 +364,7 @@ const EventsPage = ({ adminData }: DashboardPageProps) => {
             </Button>
           </div>
 
-          <div className="flex flex-col items-center sm:flex-row gap-4">
+          <div className="flex flex-col items-center sm:flex-row gap-4 pt-6">
             <div>
               <h3 className="font-medium text-gray-900">Filters:</h3>
             </div>

@@ -1,16 +1,17 @@
 import useSWR from "swr";
 import axios from "axios";
+import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { BASE_URL } from "@/utils/url";
 import Layout from "@/components/website/Layout";
-import Modal from "@/components/dashboard/ui/modals/Modal";
+import Button from "@/components/dashboard/ui/Button";
 
 interface Event {
   id: string;
-  date: string;
   type: string;
+  date: string;
   title: string;
   location: string;
   imageUrl: string;
@@ -30,8 +31,6 @@ const EventsPage = () => {
     fetchPublishedEvents,
   );
   const [selectedType, setSelectedType] = useState<string>("all");
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
 
   const eventTypes = ["all", ...Array.from(new Set(events.map((e) => e.type)))];
 
@@ -39,11 +38,6 @@ const EventsPage = () => {
     selectedType === "all"
       ? events
       : events.filter((e) => e.type === selectedType);
-
-  const handleEventClick = (event: Event) => {
-    setSelectedEvent(event);
-    setModalOpen(true);
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -59,7 +53,7 @@ const EventsPage = () => {
       title="Events | SoSHSA"
       description="Join us for engaging programs, workshops, and community initiatives designed to empower students."
     >
-      <section className="relative bg-white py-20 lg:py-32">
+      <section className="relative bg-white py-10 lg:py-15">
         <div className="w-full px-6 lg:px-8">
           <motion.div
             className="max-w-3xl mb-16"
@@ -89,7 +83,8 @@ const EventsPage = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             {eventTypes.map((type) => (
-              <button
+              <Button
+                variant="secondary"
                 key={type}
                 onClick={() => setSelectedType(type)}
                 className={`px-6 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
@@ -99,7 +94,7 @@ const EventsPage = () => {
                 }`}
               >
                 {type === "all" ? "All Events" : type}
-              </button>
+              </Button>
             ))}
           </motion.div>
 
@@ -130,10 +125,7 @@ const EventsPage = () => {
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
-                  <div
-                    onClick={() => handleEventClick(event)}
-                    className="group block cursor-pointer"
-                  >
+                  <Link href={`/events/${event.id}`} className="group block">
                     <div className="relative h-96 overflow-hidden bg-gray-200 mb-4 rounded-lg">
                       <Image
                         src={event.imageUrl}
@@ -190,96 +182,11 @@ const EventsPage = () => {
                         {event.location}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </motion.div>
               ))}
             </motion.div>
           )}
-
-          <Modal
-            isOpen={modalOpen}
-            onClose={() => setModalOpen(false)}
-            size="xxl"
-          >
-            {selectedEvent && (
-              <div className="space-y-6">
-                <div className="relative w-full h-screen rounded-lg overflow-hidden">
-                  <Image
-                    src={selectedEvent.imageUrl}
-                    alt={selectedEvent.title}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-
-                <div>
-                  <span className="inline-block text-sm uppercase tracking-wide text-primary font-medium mb-3">
-                    {selectedEvent.type}
-                  </span>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                    {selectedEvent.title}
-                  </h2>
-
-                  <div className="flex flex-wrap gap-6 text-gray-600 mb-8">
-                    <div className="flex items-center gap-2">
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                      <span>
-                        {new Date(selectedEvent.date).toLocaleDateString(
-                          "en-US",
-                          {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          },
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                      <span>{selectedEvent.location}</span>
-                    </div>
-                  </div>
-
-                  {selectedEvent.description && (
-                    <p className="text-gray-700 leading-relaxed text-lg">
-                      {selectedEvent.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-          </Modal>
         </div>
       </section>
     </Layout>

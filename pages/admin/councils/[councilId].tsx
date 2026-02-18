@@ -27,15 +27,15 @@ import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
 
 const ExecutivesPage = ({ adminData }: DashboardPageProps) => {
-  const router = useRouter();
-  const [limit] = useState(15);
-  const { councilId } = router.query;
-  const [page, setPage] = useState(1);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(15);
+  const router = useRouter();
+  const { councilId } = router.query;
   const [editingExecutive, setEditingExecutive] = useState<Executive | null>(
     null,
   );

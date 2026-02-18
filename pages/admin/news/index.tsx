@@ -1,60 +1,39 @@
+import useSWR from "swr";
 import Image from "next/image";
-import { useState } from "react";
-// import { GetServerSideProps } from "next";
-import Table from "@/components/dashboard/ui/Table";
+import {
+  NewsArticle,
+  TableColumn,
+  NewsResponse,
+  DashboardPageProps,
+} from "@/types/interface/dashboard";
+import { NextApiRequest } from "next";
+import { Toaster, toast } from "sonner";
+import axios, { AxiosError } from "axios";
+import { isLoggedIn } from "@/utils/auth";
+import { useState, useCallback } from "react";
+import { getErrorMessage } from "@/utils/error";
 import Sheet from "@/components/dashboard/ui/Sheet";
+import Table from "@/components/dashboard/ui/Table";
 import { renderPublishedBadge } from "@/utils/badge";
+import Button from "@/components/dashboard/ui/Button";
+import { BASE_URL, JEETIX_BASE_URL } from "@/utils/url";
 import Input from "@/components/dashboard/ui/InputField";
-import SearchBar from "@/components/dashboard/ui/SearchBar";
 import { Plus, Edit, Trash2, Upload } from "lucide-react";
-import { NewsArticle, TableColumn } from "@/types/interface/dashboard";
+import Textarea from "@/components/dashboard/ui/TextArea";
+import SearchBar from "@/components/dashboard/ui/SearchBar";
+import { CustomError, ErrorResponseData, FilterStatus } from "@/types";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
 
-const mockNews: NewsArticle[] = [
-  {
-    id: "1",
-    title: "SoSHSA Wins Best Student Association Award",
-    excerpt:
-      "The Social Sciences and Humanities Students Association has been recognized for excellence in student leadership...",
-    author: "Admin User",
-    image: "/images/about/story-1.jpg",
-    isPublished: true,
-    publishedAt: "2024-01-15",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    title: "New Academic Programs Announced for 2024",
-    excerpt:
-      "The university announces several new programs in social sciences and humanities fields...",
-    author: "Admin User",
-    image: "/images/about/story-2.jpg",
-    isPublished: true,
-    publishedAt: "2024-01-14",
-    createdAt: "2024-01-14",
-  },
-  {
-    id: "3",
-    title: "Upcoming Career Fair for Social Sciences Students",
-    excerpt:
-      "Mark your calendars for the annual career fair connecting students with potential employers...",
-    author: "Admin User",
-    image: "/images/about/story-3.jpg",
-    isPublished: false,
-    publishedAt: "",
-    createdAt: "2024-01-13",
-  },
-];
-
-type FilterStatus = "all" | "published" | "draft";
-
-const NewsPage = () => {
-  const [searchQuery, setSearchQuery] = useState("");
+const NewsPage = ({ adminData }: DashboardPageProps) => {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
-  const [news, setNews] = useState(mockNews);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(15);
   const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(
     null,
   );
@@ -62,11 +41,13 @@ const NewsPage = () => {
     null,
   );
   const [imagePreview, setImagePreview] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     excerpt: "",
     content: "",
-    author: "Admin User",
+    author: "",
+    imageUrl: "",
     isPublished: true,
   });
   const [deleteModal, setDeleteModal] = useState<{
@@ -77,19 +58,47 @@ const NewsPage = () => {
     id: null,
   });
 
-  const filteredNews = news.filter((article) => {
-    const matchesSearch =
-      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      article.author.toLowerCase().includes(searchQuery.toLowerCase());
+  const fetchNews = async (): Promise<NewsResponse> => {
+    const params: Record<string, string | number> = {
+      page: page - 1,
+      limit,
+      search: searchQuery,
+    };
 
-    const matchesFilter =
-      filterStatus === "all" ||
-      (filterStatus === "published" && article.isPublished) ||
-      (filterStatus === "draft" && !article.isPublished);
+    if (filterStatus === "published") params.isPublished = "true";
+    if (filterStatus === "draft") params.isPublished = "false";
 
-    return matchesSearch && matchesFilter;
-  });
+    const { data } = await axios.get(`${BASE_URL}/news-articles`, {
+      params,
+      headers: { Authorization: `Bearer ${adminData.token}` },
+    });
+    return data.data;
+  };
+
+  const { data, mutate, isLoading } = useSWR(
+    ["news", adminData.token, page, limit, searchQuery, filterStatus],
+    fetchNews,
+    {
+      revalidateOnFocus: false,
+      onError: (error) => {
+        const { message } = getErrorMessage(
+          error as AxiosError<ErrorResponseData> | CustomError | Error,
+        );
+        toast.error("Failed to load news articles", {
+          description: message,
+          duration: 4000,
+        });
+      },
+    },
+  );
+
+  const articles = data?.data ?? [];
+  const totalPages = data ? Math.ceil(data.meta.total / limit) : 0;
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  }, []);
 
   const handleView = (article: NewsArticle) => {
     setViewingArticle(article);
@@ -102,21 +111,25 @@ const NewsPage = () => {
       setFormData({
         title: article.title,
         excerpt: article.excerpt,
-        content: "",
+        content: article.content || "",
         author: article.author,
+        imageUrl: article.imageUrl,
         isPublished: article.isPublished,
       });
-      setImagePreview(article.image);
+      setImagePreview(article.imageUrl);
+      setImageFile(null);
     } else {
       setEditingArticle(null);
       setFormData({
         title: "",
         excerpt: "",
         content: "",
-        author: "Admin User",
+        author: "",
+        imageUrl: "",
         isPublished: true,
       });
       setImagePreview("");
+      setImageFile(null);
     }
     setSheetOpen(true);
   };
@@ -124,12 +137,22 @@ const NewsPage = () => {
   const handleCloseSheet = () => {
     setSheetOpen(false);
     setEditingArticle(null);
+    setFormData({
+      title: "",
+      excerpt: "",
+      content: "",
+      author: "",
+      imageUrl: "",
+      isPublished: true,
+    });
     setImagePreview("");
+    setImageFile(null);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -138,25 +161,117 @@ const NewsPage = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Form submitted:", formData);
-    handleCloseSheet();
+  const uploadImageToJeetix = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "soshsa/news");
+
+    const { data } = await axios.post(
+      `${JEETIX_BASE_URL}/api/storage/upload`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+
+    return data.data.fileUrl;
   };
 
-  const handleDelete = (id: string) => {
-    setNews(news.filter((article) => article.id !== id));
-    setDeleteModal({ isOpen: false, id: null });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      let imageUrl = formData.imageUrl;
+
+      if (imageFile) {
+        setUploadingImage(true);
+        toast.loading("Uploading image...", { id: "upload-toast" });
+        imageUrl = await uploadImageToJeetix(imageFile);
+        toast.dismiss("upload-toast");
+        setUploadingImage(false);
+      }
+
+      if (!imageUrl) {
+        toast.error("Article image is required");
+        setSubmitting(false);
+        return;
+      }
+
+      const payload = {
+        ...formData,
+        imageUrl,
+      };
+
+      const actionText = editingArticle ? "Updating" : "Creating";
+      toast.loading(`${actionText} article...`, { id: "action-toast" });
+
+      if (editingArticle) {
+        await axios.patch(
+          `${BASE_URL}/news-articles/${editingArticle.id}`,
+          payload,
+          {
+            headers: { Authorization: `Bearer ${adminData.token}` },
+          },
+        );
+        toast.dismiss("action-toast");
+        toast.success("Article updated successfully");
+      } else {
+        await axios.post(`${BASE_URL}/news-articles`, payload, {
+          headers: { Authorization: `Bearer ${adminData.token}` },
+        });
+        toast.dismiss("action-toast");
+        toast.success("Article created successfully");
+      }
+      mutate();
+      handleCloseSheet();
+    } catch (error) {
+      toast.dismiss("upload-toast");
+      toast.dismiss("action-toast");
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error(
+        editingArticle
+          ? "Failed to update article"
+          : "Failed to create article",
+        {
+          description: message,
+          duration: 4000,
+        },
+      );
+    } finally {
+      setSubmitting(false);
+      setUploadingImage(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await axios.delete(`${BASE_URL}/news-articles/${id}`, {
+        headers: { Authorization: `Bearer ${adminData.token}` },
+      });
+      toast.success("Article deleted successfully");
+      mutate();
+    } catch (error) {
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error("Failed to delete article", {
+        description: message,
+        duration: 4000,
+      });
+    }
   };
 
   const columns: TableColumn<NewsArticle>[] = [
     {
-      key: "image",
+      key: "imageUrl",
       label: "Image",
-      render: (value: string | boolean | undefined, row) => (
+      render: (value, row) => (
         <div className="w-16 h-16 rounded overflow-hidden bg-gray-200 relative">
           <Image
-            src={value as string}
+            src={(value as string) || "/placeholder.png"}
             alt={row.title}
             fill
             className="object-cover"
@@ -167,8 +282,8 @@ const NewsPage = () => {
     {
       key: "title",
       label: "Title",
-      render: (value: string | boolean | undefined) => (
-        <span className="font-medium text-gray-900">{value}</span>
+      render: (value) => (
+        <span className="font-medium">{value as string}</span>
       ),
     },
     {
@@ -176,28 +291,21 @@ const NewsPage = () => {
       label: "Author",
     },
     {
-      key: "publishedAt",
-      label: "Published",
-      render: (value: string | boolean | undefined) =>
-        value
-          ? new Date(value as string).toLocaleDateString("en-GB", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              timeZone: "UTC",
-            })
-          : "-",
+      key: "excerpt",
+      label: "Excerpt",
+      render: (value) => (
+        <span className="line-clamp-2">{value as string}</span>
+      ),
     },
     {
       key: "isPublished",
       label: "Status",
-      render: (value: string | boolean | undefined) =>
-        renderPublishedBadge(value as boolean),
+      render: (value) => renderPublishedBadge(value as boolean),
     },
     {
       key: "id",
       label: "Actions",
-      render: (_value: string | boolean | undefined, row) => (
+      render: (_value, row) => (
         <div className="flex items-center gap-2">
           <button
             onClick={(e) => {
@@ -225,323 +333,320 @@ const NewsPage = () => {
   ];
 
   return (
-    <DashboardLayout pageTitle="News">
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-          <SearchBar
-            onSearch={setSearchQuery}
-            className="flex-1 max-w-md"
-            placeholder="Search news..."
+    <>
+      <Toaster position="top-right" richColors />
+      <DashboardLayout pageTitle="News Articles" adminData={adminData}>
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <SearchBar
+              placeholder="Search articles..."
+              onSearch={handleSearch}
+              className="flex-1 max-w-md"
+            />
+
+            <Button
+              onClick={() => handleOpenSheet()}
+              leftIcon={<Plus size={20} />}
+            >
+              Add Article
+            </Button>
+          </div>
+
+          <div className="flex flex-col items-center sm:flex-row gap-4 pt-6">
+            <div>
+              <h3 className="font-medium text-gray-900">Filters:</h3>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={filterStatus === "all" ? "primary" : "secondary"}
+                onClick={() => {
+                  setFilterStatus("all");
+                  setPage(1);
+                }}
+              >
+                All
+              </Button>
+              <Button
+                variant={filterStatus === "published" ? "primary" : "secondary"}
+                onClick={() => {
+                  setFilterStatus("published");
+                  setPage(1);
+                }}
+              >
+                Published
+              </Button>
+              <Button
+                variant={filterStatus === "draft" ? "primary" : "secondary"}
+                onClick={() => {
+                  setFilterStatus("draft");
+                  setPage(1);
+                }}
+              >
+                Draft
+              </Button>
+            </div>
+          </div>
+
+          <Table
+            columns={columns}
+            data={articles}
+            loading={isLoading}
+            emptyMessage="No articles found"
+            onRowClick={handleView}
+            pagination={{
+              page,
+              totalPages,
+              total: data?.meta.total,
+              onPageChange: setPage,
+            }}
           />
-          <button
-            onClick={() => handleOpenSheet()}
-            className="cursor-pointer flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={20} />
-            Add News Article
-          </button>
         </div>
 
-        <div className="flex flex-col items-center sm:flex-row gap-4 mt-10">
-          <div>
-            <h1>Filters:</h1>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilterStatus("all")}
-              className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filterStatus === "all"
-                  ? "bg-primary text-white"
-                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilterStatus("published")}
-              className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filterStatus === "published"
-                  ? "bg-primary text-white"
-                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              Published
-            </button>
-            <button
-              onClick={() => setFilterStatus("draft")}
-              className={`cursor-pointer px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filterStatus === "draft"
-                  ? "bg-primary text-white"
-                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              Draft
-            </button>
-          </div>
-        </div>
-
-        <Table
-          columns={columns}
-          data={filteredNews}
-          onRowClick={handleView}
-          emptyMessage="No news articles found"
-        />
-      </div>
-
-      <Sheet
-        isOpen={viewSheetOpen}
-        onClose={() => setViewSheetOpen(false)}
-        title="News Article Details"
-      >
-        {viewingArticle && (
-          <div className="space-y-6">
-            <div className="flex justify-center">
-              <div className="w-full h-full aspect-video rounded-sm overflow-hidden bg-gray-200 relative">
+        <Sheet
+          isOpen={viewSheetOpen}
+          onClose={() => setViewSheetOpen(false)}
+          title="Article Details"
+        >
+          {viewingArticle && (
+            <div className="space-y-6">
+              <div className="w-full aspect-video rounded-lg bg-gray-200 relative overflow-hidden">
                 <Image
-                  src={viewingArticle.image}
+                  src={viewingArticle.imageUrl}
                   alt={viewingArticle.title}
                   fill
                   className="object-cover"
                 />
               </div>
-            </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">
-                  Title
-                </label>
-                <p className="text-gray-900 font-medium text-lg">
-                  {viewingArticle.title}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">
-                  Excerpt
-                </label>
-                <p className="text-gray-900">{viewingArticle.excerpt}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">
-                  Author
-                </label>
-                <p className="text-gray-900">{viewingArticle.author}</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-500 mb-1">
-                  Status
-                </label>
-                {renderPublishedBadge(viewingArticle.isPublished)}
-              </div>
-
-              {viewingArticle.publishedAt && (
+              <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Published Date
+                    Title
                   </label>
-                  <p className="text-gray-900">
-                    {new Date(viewingArticle.publishedAt).toLocaleDateString(
-                      "en-GB",
-                      {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      },
-                    )}
+                  <p className="text-gray-900 font-medium text-lg">
+                    {viewingArticle.title}
                   </p>
                 </div>
-              )}
-            </div>
 
-            <div className="flex gap-3 pt-4 border-t border-gray-200">
-              <button
-                onClick={() => {
-                  setViewSheetOpen(false);
-                  handleOpenSheet(viewingArticle);
-                }}
-                className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => setViewSheetOpen(false)}
-                className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
-      </Sheet>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Author
+                  </label>
+                  <p className="text-gray-900">{viewingArticle.author}</p>
+                </div>
 
-      <Sheet
-        isOpen={sheetOpen}
-        onClose={handleCloseSheet}
-        title={editingArticle ? "Edit News Article" : "Add News Article"}
-      >
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Featured Image
-            </label>
-            <div className="flex items-start gap-6">
-              {imagePreview ? (
-                <div className="w-48 h-32 rounded-lg overflow-hidden bg-gray-200 relative">
-                  <Image
-                    src={imagePreview}
-                    alt="Preview"
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Excerpt
+                  </label>
+                  <p className="text-gray-900">{viewingArticle.excerpt}</p>
                 </div>
-              ) : (
-                <div className="w-48 h-32 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <Upload size={32} className="text-gray-400" />
+
+                {viewingArticle.content && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                      Content
+                    </label>
+                    <p className="text-gray-900 whitespace-pre-wrap">
+                      {viewingArticle.content}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Status
+                  </label>
+                  {renderPublishedBadge(viewingArticle.isPublished)}
                 </div>
-              )}
-              <div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                  id="news-image-upload"
-                />
-                <label
-                  htmlFor="news-image-upload"
-                  className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={() => {
+                    setViewSheetOpen(false);
+                    handleOpenSheet(viewingArticle);
+                  }}
                 >
-                  <Upload size={16} />
-                  Upload Image
-                </label>
-                <p className="text-xs text-gray-500 mt-2">
-                  Recommended: 1200x630px
-                </p>
+                  Edit
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setViewSheetOpen(false)}
+                >
+                  Close
+                </Button>
               </div>
             </div>
-          </div>
+          )}
+        </Sheet>
 
-          <Input
-            label="Article Title"
-            type="text"
-            placeholder="Enter article title"
-            value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
-            required
-          />
+        <Sheet
+          isOpen={sheetOpen}
+          onClose={handleCloseSheet}
+          title={editingArticle ? "Edit Article" : "Add Article"}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Article Image <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-start gap-6">
+                {imagePreview ? (
+                  <div className="w-48 h-32 rounded-lg overflow-hidden bg-gray-200 relative">
+                    <Image
+                      src={imagePreview}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                ) : (
+                  <div className="w-48 h-32 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <Upload size={32} className="text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="image-upload"
+                    required={!editingArticle && !imagePreview}
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <Upload size={16} />
+                    {imagePreview ? "Change Image" : "Upload Image"}
+                  </label>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Recommended: 1920x1080px
+                  </p>
+                </div>
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Excerpt
-            </label>
-            <textarea
+            <Input
+              label="Title"
+              type="text"
+              placeholder="Enter article title"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              required
+            />
+
+            <Input
+              label="Author"
+              type="text"
+              placeholder="Enter author name"
+              value={formData.author}
+              onChange={(e) =>
+                setFormData({ ...formData, author: e.target.value })
+              }
+              required
+            />
+
+            <Textarea
+              label="Excerpt"
               value={formData.excerpt}
               onChange={(e) =>
                 setFormData({ ...formData, excerpt: e.target.value })
               }
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              placeholder="Brief summary of the article..."
+              placeholder="Short summary of the article..."
               required
             />
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Content
-            </label>
-            <textarea
+            <Textarea
+              label="Content"
               value={formData.content}
               onChange={(e) =>
                 setFormData({ ...formData, content: e.target.value })
               }
-              rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              rows={8}
               placeholder="Full article content..."
-              required
             />
-          </div>
 
-          <Input
-            label="Author"
-            type="text"
-            value={formData.author}
-            onChange={(e) =>
-              setFormData({ ...formData, author: e.target.value })
-            }
-            required
-          />
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="isPublished"
+                checked={formData.isPublished}
+                onChange={(e) =>
+                  setFormData({ ...formData, isPublished: e.target.checked })
+                }
+                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+              />
+              <label
+                htmlFor="isPublished"
+                className="text-sm font-medium text-gray-700"
+              >
+                Publish immediately
+              </label>
+            </div>
 
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              id="isPublished"
-              checked={formData.isPublished}
-              onChange={(e) =>
-                setFormData({ ...formData, isPublished: e.target.checked })
-              }
-              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-            />
-            <label
-              htmlFor="isPublished"
-              className="text-sm font-medium text-gray-700"
-            >
-              Publish immediately
-            </label>
-          </div>
+            <div className="flex gap-4 pt-4">
+              <Button
+                type="submit"
+                variant="primary"
+                className="flex-1"
+                isLoading={submitting || uploadingImage}
+              >
+                {uploadingImage
+                  ? "Uploading Image..."
+                  : editingArticle
+                    ? "Update Article"
+                    : "Add Article"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={submitting || uploadingImage}
+                onClick={handleCloseSheet}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Sheet>
 
-          <div className="flex gap-4 pt-4">
-            <button
-              type="submit"
-              className="cursor-pointer flex-1 bg-primary text-white py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            >
-              {editingArticle ? "Update Article" : "Publish Article"}
-            </button>
-            <button
-              type="button"
-              onClick={handleCloseSheet}
-              className="cursor-pointer px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Sheet>
-
-      <ConfirmationModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, id: null })}
-        onConfirm={() => deleteModal.id && handleDelete(deleteModal.id)}
-        title="Delete News Article"
-        message="Are you sure you want to delete this news article? This action cannot be undone."
-        confirmText="Delete"
-        type="danger"
-      />
-    </DashboardLayout>
+        <ConfirmationModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false, id: null })}
+          onConfirm={() => deleteModal.id && handleDelete(deleteModal.id)}
+          title="Delete Article"
+          message="Are you sure you want to delete this article? This action cannot be undone."
+          confirmText="Delete"
+          type="danger"
+        />
+      </DashboardLayout>
+    </>
   );
 };
 
-// export const getServerSideProps: GetServerSideProps = async (context) => {
-//   const token = context.req.cookies.token || null;
+export const getServerSideProps = async ({ req }: { req: NextApiRequest }) => {
+  const adminData = isLoggedIn(req);
 
-//   if (!token) {
-//     return {
-//       redirect: {
-//         destination: "/admin/auth/sign-in",
-//         permanent: false,
-//       },
-//     };
-//   }
+  if (!adminData) {
+    return {
+      redirect: {
+        destination: "/admin/auth/sign-in",
+        permanent: false,
+      },
+    };
+  }
 
-//   return {
-//     props: {},
-//   };
-// };
+  return {
+    props: { adminData },
+  };
+};
 
 export default NewsPage;
