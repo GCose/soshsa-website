@@ -11,7 +11,7 @@ import { useRouter } from "next/router";
 import { Toaster, toast } from "sonner";
 import axios, { AxiosError } from "axios";
 import { isLoggedIn } from "@/utils/auth";
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { getErrorMessage } from "@/utils/error";
 import { renderStatusBadge } from "@/utils/badge";
 import { Plus, Edit, Trash2 } from "lucide-react";
@@ -20,19 +20,19 @@ import Table from "@/components/dashboard/ui/Table";
 import Button from "@/components/dashboard/ui/Button";
 import Input from "@/components/dashboard/ui/InputField";
 import { CustomError, ErrorResponseData } from "@/types";
+import Textarea from "@/components/dashboard/ui/TextArea";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
-import Textarea from "@/components/dashboard/ui/TextArea";
 
 const CouncilsPage = ({ adminData }: DashboardPageProps) => {
-  const router = useRouter();
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [editingCouncil, setEditingCouncil] = useState<Council | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [editingCouncil, setEditingCouncil] = useState<Council | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(15);
+  const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -71,12 +71,13 @@ const CouncilsPage = ({ adminData }: DashboardPageProps) => {
     },
   );
 
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery]);
-
   const councils = data?.data ?? [];
   const totalPages = data ? Math.ceil(data.meta.total / limit) : 0;
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  }, []);
 
   const handleViewCouncil = (council: Council) => {
     router.push(`/admin/councils/${council.id}`);
@@ -225,7 +226,7 @@ const CouncilsPage = ({ adminData }: DashboardPageProps) => {
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <SearchBar
               placeholder="Search councils..."
-              onSearch={setSearchQuery}
+              onSearch={handleSearch}
               className="flex-1 max-w-md"
             />
 

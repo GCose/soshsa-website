@@ -24,7 +24,7 @@ const SearchBar = ({ onSearch, className = "", ...props }: SearchBarProps) => {
         type="text"
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
-        className="pl-10 bg-gray-100! focus:bg-white!"
+        className="pl-10 bg-teal-50! focus:bg-white! rounded-lg"
         placeholder="Search..."
         {...props}
       />

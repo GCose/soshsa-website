@@ -52,7 +52,7 @@ const Table = <T,>({
   const getShowingText = () => {
     if (!pagination || pagination.totalPages === 0) return null;
 
-    const limit = 10;
+    const limit = 15;
     const start = (pagination.page - 1) * limit + 1;
     const end = Math.min(pagination.page * limit, pagination.total || 0);
     const total = pagination.total || 0;
@@ -89,7 +89,7 @@ const Table = <T,>({
               </tr>
             </thead>
             <tbody>
-              {data.length === 0 && !loading ? (
+              {data.length === 0 ? (
                 <tr>
                   <td
                     colSpan={columns.length}
