@@ -1,6 +1,6 @@
 import "@/styles/globals.css";
-import type { AppProps } from "next/app";
 import { SWRConfig } from "swr";
+import type { AppProps } from "next/app";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -8,8 +8,8 @@ export default function App({ Component, pageProps }: AppProps) {
       value={{
         revalidateOnFocus: false,
         revalidateOnReconnect: false,
-        revalidateIfStale: false,
-        dedupingInterval: 10000,
+        revalidateIfStale: true,
+        dedupingInterval: 60000,
         errorRetryCount: 3,
         errorRetryInterval: 5000,
         shouldRetryOnError: true,

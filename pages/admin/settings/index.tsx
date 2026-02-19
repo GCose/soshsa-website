@@ -6,8 +6,8 @@ import axios, { AxiosError } from "axios";
 import { isLoggedIn } from "@/utils/auth";
 import { useState, FormEvent } from "react";
 import { getErrorMessage } from "@/utils/error";
-import { Eye, EyeOff, User, Lock } from "lucide-react";
 import Button from "@/components/dashboard/ui/Button";
+import { Eye, EyeOff, User, Lock } from "lucide-react";
 import Input from "@/components/dashboard/ui/InputField";
 import { CustomError, ErrorResponseData, TabType } from "@/types";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
@@ -66,11 +66,26 @@ const SettingsPage = ({ adminData }: DashboardPageProps) => {
     setSavingProfile(true);
 
     try {
-      await axios.patch(`${BASE_URL}/admin/profile`, profileSettings, {
-        headers: { Authorization: `Bearer ${adminData.token}` },
+      const { data } = await axios.patch(
+        `${BASE_URL}/admin/profile`,
+        profileSettings,
+        {
+          headers: { Authorization: `Bearer ${adminData.token}` },
+        },
+      );
+
+      await axios.post("/api/admin/update-cookie", {
+        token: adminData.token,
+        userId: adminData.userId,
+        email: data.data.email,
+        firstName: data.data.firstName,
+        lastName: data.data.lastName,
       });
+
       toast.success("Profile updated successfully");
       mutate();
+
+      window.location.reload();
     } catch (error) {
       const { message } = getErrorMessage(
         error as AxiosError<ErrorResponseData> | CustomError | Error,
@@ -171,7 +186,7 @@ const SettingsPage = ({ adminData }: DashboardPageProps) => {
                   <form onSubmit={handleProfileSave} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input
-                        className="border border-teal-100"
+                      className="border-teal-100"
                         label="First Name"
                         type="text"
                         value={profileSettings.firstName}
@@ -185,7 +200,7 @@ const SettingsPage = ({ adminData }: DashboardPageProps) => {
                       />
 
                       <Input
-                        className="border border-teal-100"
+                      className="border-teal-100"
                         label="Last Name"
                         type="text"
                         value={profileSettings.lastName}
@@ -200,7 +215,7 @@ const SettingsPage = ({ adminData }: DashboardPageProps) => {
                     </div>
 
                     <Input
-                      className="border border-teal-100"
+                    className="border-teal-100"
                       label="Email Address"
                       type="email"
                       value={profileSettings.email}
@@ -240,7 +255,7 @@ const SettingsPage = ({ adminData }: DashboardPageProps) => {
                   <form onSubmit={handlePasswordSave} className="space-y-4">
                     <div className="relative">
                       <Input
-                        className="border border-teal-100"
+                      className="border-teal-100"
                         label="Current Password"
                         type={showPasswords.current ? "text" : "password"}
                         placeholder="••••••••"
@@ -273,7 +288,7 @@ const SettingsPage = ({ adminData }: DashboardPageProps) => {
 
                     <div className="relative">
                       <Input
-                        className="border border-teal-100"
+                      className="border-teal-100"
                         label="New Password"
                         type={showPasswords.new ? "text" : "password"}
                         placeholder="••••••••"
@@ -306,7 +321,7 @@ const SettingsPage = ({ adminData }: DashboardPageProps) => {
 
                     <div className="relative">
                       <Input
-                        className="border border-teal-100"
+                      className="border-teal-100"
                         label="Confirm New Password"
                         type={showPasswords.confirm ? "text" : "password"}
                         placeholder="••••••••"
