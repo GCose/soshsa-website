@@ -35,15 +35,15 @@ const fetchRecentInbox = async (token: string): Promise<InboxMessage[]> => {
 };
 
 const statusColors = {
-  PENDING: "bg-yellow-100 text-yellow-700 border-yellow-300",
-  READ: "bg-blue-100 text-blue-700 border-blue-300",
-  RESOLVED: "bg-green-100 text-green-700 border-green-300",
+  unread: "bg-yellow-100 text-yellow-700 border-none",
+  read: "bg-blue-100 text-blue-700 border-none",
+  resolved: "bg-green-100 text-green-700 border-none",
 };
 
 const statusLabels: Record<InboxMessage["status"], string> = {
-  PENDING: "Unread",
-  READ: "Read",
-  RESOLVED: "Resolved",
+  unread: "Unread",
+  read: "Read",
+  resolved: "Resolved",
 };
 
 const DashboardPage = ({ adminData }: DashboardPageProps) => {

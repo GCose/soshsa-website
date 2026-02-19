@@ -43,10 +43,10 @@ const NewsPage = () => {
         <div className="w-full px-6 lg:px-8">
           <motion.div
             className="max-w-3xl mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            initial={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.6 }}
+            whileInView={{ opacity: 1, y: 0 }}
           >
             <p className="text-primary text-sm uppercase tracking-widest mb-4">
               Stay Informed
@@ -104,10 +104,10 @@ const NewsPage = () => {
                         <span>•</span>
                         <span>{formatDate(article.createdAt)}</span>
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors">
+                      <h3 className="text-xl uppercase font-bold text-gray-900 group-hover:text-primary transition-colors">
                         {article.title}
                       </h3>
-                      <p className="text-gray-600 line-clamp-2">
+                      <p className="text-gray-400 line-clamp-2">
                         {article.excerpt}
                       </p>
                     </div>

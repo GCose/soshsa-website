@@ -61,7 +61,7 @@ const DashboardLayout = ({
         { name: "Councils", href: "/admin/councils", icon: Users },
         { name: "Events", href: "/admin/events", icon: Calendar },
         { name: "News", href: "/admin/news", icon: BookOpen },
-        { name: "Magazine", href: "/admin/magazines", icon: BookOpen },
+        { name: "Magazines", href: "/admin/magazines", icon: BookOpen },
         { name: "Comments", href: "/admin/comments", icon: MessageSquare },
       ],
     },

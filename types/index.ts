@@ -26,3 +26,7 @@ export type AdminAuth = {
 };
 
 export type FilterStatus = "all" | "published" | "draft";
+
+export type TabType = "profile" | "security";
+
+export type InboxFilterStatus = "all" | "unread" | "read" | "resolved";

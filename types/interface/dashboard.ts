@@ -91,19 +91,6 @@ export interface DashboardStats {
     totalMagazines: number;
     totalCourses: number;
 }
-
-export interface InboxMessage {
-    id: string;
-    fullName: string;
-    email: string;
-    phone: string;
-    subject: string;
-    message: string;
-    status: "PENDING" | "READ" | "RESOLVED";
-    createdAt: string;
-    updatedAt: string;
-}
-
 export interface Council {
     id: string;
     name: string;
@@ -186,6 +173,27 @@ export interface Magazine {
 
 export interface MagazinesResponse {
     data: Magazine[];
+    meta: { total: number };
+}
+
+export interface MagazineArticle {
+    id: string;
+    title: string;
+    author: string;
+    content?: string;
+    imageUrl?: string;
+    magazine: {
+        _id: string;
+        title: string;
+        year: string;
+    };
+    isPublished: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ArticlesResponse {
+    data: MagazineArticle[];
     meta: { total: number };
 }
 
@@ -287,4 +295,27 @@ export interface SiteSettings {
     physicalAddress: string;
     officeHours: string;
     updatedAt: string;
+}
+
+export interface InboxMessage {
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    subject: string;
+    message: string;
+    status: "unread" | "read" | "resolved";
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface InboxResponse {
+    data: InboxMessage[];
+    meta: { total: number };
+}
+export interface AdminProfile {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
 }

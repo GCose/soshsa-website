@@ -1,10 +1,10 @@
 import useSWR from "swr";
 import Image from "next/image";
 import {
-  Magazine,
   TableColumn,
-  MagazinesResponse,
+  MagazineArticle,
   DashboardPageProps,
+  ArticlesResponse,
 } from "@/types/interface/dashboard";
 import { NextApiRequest } from "next";
 import { useRouter } from "next/router";
@@ -19,30 +19,36 @@ import { renderPublishedBadge } from "@/utils/badge";
 import Button from "@/components/dashboard/ui/Button";
 import { BASE_URL, JEETIX_BASE_URL } from "@/utils/url";
 import Input from "@/components/dashboard/ui/InputField";
-import { Plus, Edit, Trash2, Upload } from "lucide-react";
+import { CustomError, ErrorResponseData } from "@/types";
+import Textarea from "@/components/dashboard/ui/TextArea";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
-import { CustomError, ErrorResponseData, FilterStatus } from "@/types";
+import { ArrowLeft, Plus, Edit, Trash2, Upload } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
 
-const MagazinesPage = ({ adminData }: DashboardPageProps) => {
-  const [editingMagazine, setEditingMagazine] = useState<Magazine | null>(null);
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
-  const [imageFile, setImageFile] = useState<File | null>(null);
+const MagazineArticlesPage = ({ adminData }: DashboardPageProps) => {
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [viewingMagazine] = useState<Magazine | null>(null);
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [page, setPage] = useState(1);
   const [limit] = useState(15);
   const router = useRouter();
-  const [page, setPage] = useState(1);
+  const { magazineId } = router.query;
+  const [editingArticle, setEditingArticle] = useState<MagazineArticle | null>(
+    null,
+  );
+  const [viewingArticle, setViewingArticle] = useState<MagazineArticle | null>(
+    null,
+  );
   const [imagePreview, setImagePreview] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     title: "",
-    year: "",
-    coverImageUrl: "",
+    author: "",
+    content: "",
+    imageUrl: "",
     isPublished: true,
   });
   const [deleteModal, setDeleteModal] = useState<{
@@ -53,33 +59,38 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
     id: null,
   });
 
-  const fetchMagazines = async (): Promise<MagazinesResponse> => {
-    const params: Record<string, string | number> = {
-      page: page - 1,
-      limit,
-      search: searchQuery,
-    };
-
-    if (filterStatus === "published") params.isPublished = "true";
-    if (filterStatus === "draft") params.isPublished = "false";
-
-    const { data } = await axios.get(`${BASE_URL}/magazines`, {
-      params,
+  const fetchArticles = async (): Promise<ArticlesResponse> => {
+    const { data } = await axios.get(`${BASE_URL}/magazine-articles`, {
+      params: {
+        magazine: magazineId,
+        page: page - 1,
+        limit,
+        search: searchQuery,
+      },
       headers: { Authorization: `Bearer ${adminData.token}` },
     });
     return data.data;
   };
 
   const { data, mutate, isLoading } = useSWR(
-    ["magazines", adminData.token, page, limit, searchQuery, filterStatus],
-    fetchMagazines,
+    magazineId
+      ? [
+          "magazine-articles",
+          adminData.token,
+          magazineId,
+          page,
+          limit,
+          searchQuery,
+        ]
+      : null,
+    fetchArticles,
     {
       revalidateOnFocus: false,
       onError: (error) => {
         const { message } = getErrorMessage(
           error as AxiosError<ErrorResponseData> | CustomError | Error,
         );
-        toast.error("Failed to load magazines", {
+        toast.error("Failed to load articles", {
           description: message,
           duration: 4000,
         });
@@ -87,7 +98,7 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
     },
   );
 
-  const magazines = data?.data ?? [];
+  const articles = data?.data ?? [];
   const totalPages = data ? Math.ceil(data.meta.total / limit) : 0;
 
   const handleSearch = useCallback((query: string) => {
@@ -95,27 +106,30 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
     setPage(1);
   }, []);
 
-  const handleViewMagazine = (magazine: Magazine) => {
-    router.push(`/admin/magazines/${magazine.id}/articles`);
+  const handleView = (article: MagazineArticle) => {
+    setViewingArticle(article);
+    setViewSheetOpen(true);
   };
 
-  const handleOpenSheet = (magazine?: Magazine) => {
-    if (magazine) {
-      setEditingMagazine(magazine);
+  const handleOpenSheet = (article?: MagazineArticle) => {
+    if (article) {
+      setEditingArticle(article);
       setFormData({
-        title: magazine.title,
-        year: magazine.year,
-        coverImageUrl: magazine.coverImageUrl,
-        isPublished: magazine.isPublished,
+        title: article.title,
+        author: article.author,
+        content: article.content || "",
+        imageUrl: article.imageUrl || "",
+        isPublished: article.isPublished,
       });
-      setImagePreview(magazine.coverImageUrl);
+      setImagePreview(article.imageUrl || "");
       setImageFile(null);
     } else {
-      setEditingMagazine(null);
+      setEditingArticle(null);
       setFormData({
         title: "",
-        year: new Date().getFullYear().toString(),
-        coverImageUrl: "",
+        author: "",
+        content: "",
+        imageUrl: "",
         isPublished: true,
       });
       setImagePreview("");
@@ -126,11 +140,12 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
 
   const handleCloseSheet = () => {
     setSheetOpen(false);
-    setEditingMagazine(null);
+    setEditingArticle(null);
     setFormData({
       title: "",
-      year: new Date().getFullYear().toString(),
-      coverImageUrl: "",
+      author: "",
+      content: "",
+      imageUrl: "",
       isPublished: true,
     });
     setImagePreview("");
@@ -152,7 +167,7 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
   const uploadImageToJeetix = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("folder", "soshsa/magazines");
+    formData.append("folder", "soshsa/magazine-articles");
 
     const { data } = await axios.post(
       `${JEETIX_BASE_URL}/api/storage/upload`,
@@ -170,46 +185,41 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
     setSubmitting(true);
 
     try {
-      let coverImageUrl = formData.coverImageUrl;
+      let imageUrl = formData.imageUrl;
 
       if (imageFile) {
         setUploadingImage(true);
-        toast.loading("Uploading cover image...", { id: "upload-toast" });
-        coverImageUrl = await uploadImageToJeetix(imageFile);
+        toast.loading("Uploading image...", { id: "upload-toast" });
+        imageUrl = await uploadImageToJeetix(imageFile);
         toast.dismiss("upload-toast");
         setUploadingImage(false);
       }
 
-      if (!coverImageUrl) {
-        toast.error("Cover image is required");
-        setSubmitting(false);
-        return;
-      }
-
       const payload = {
         ...formData,
-        coverImageUrl,
+        imageUrl: imageUrl || undefined,
+        magazine: magazineId,
       };
 
-      const actionText = editingMagazine ? "Updating" : "Creating";
-      toast.loading(`${actionText} magazine...`, { id: "action-toast" });
+      const actionText = editingArticle ? "Updating" : "Creating";
+      toast.loading(`${actionText} article...`, { id: "action-toast" });
 
-      if (editingMagazine) {
+      if (editingArticle) {
         await axios.patch(
-          `${BASE_URL}/magazines/${editingMagazine.id}`,
+          `${BASE_URL}/magazine-articles/${editingArticle.id}`,
           payload,
           {
             headers: { Authorization: `Bearer ${adminData.token}` },
           },
         );
         toast.dismiss("action-toast");
-        toast.success("Magazine updated successfully");
+        toast.success("Article updated successfully");
       } else {
-        await axios.post(`${BASE_URL}/magazines`, payload, {
+        await axios.post(`${BASE_URL}/magazine-articles`, payload, {
           headers: { Authorization: `Bearer ${adminData.token}` },
         });
         toast.dismiss("action-toast");
-        toast.success("Magazine created successfully");
+        toast.success("Article created successfully");
       }
       mutate();
       handleCloseSheet();
@@ -220,9 +230,9 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
         error as AxiosError<ErrorResponseData> | CustomError | Error,
       );
       toast.error(
-        editingMagazine
-          ? "Failed to update magazine"
-          : "Failed to create magazine",
+        editingArticle
+          ? "Failed to update article"
+          : "Failed to create article",
         {
           description: message,
           duration: 4000,
@@ -236,34 +246,40 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
 
   const handleDelete = async (id: string) => {
     try {
-      await axios.delete(`${BASE_URL}/magazines/${id}`, {
+      await axios.delete(`${BASE_URL}/magazine-articles/${id}`, {
         headers: { Authorization: `Bearer ${adminData.token}` },
       });
-      toast.success("Magazine deleted successfully");
+      toast.success("Article deleted successfully");
       mutate();
     } catch (error) {
       const { message } = getErrorMessage(
         error as AxiosError<ErrorResponseData> | CustomError | Error,
       );
-      toast.error("Failed to delete magazine", {
+      toast.error("Failed to delete article", {
         description: message,
         duration: 4000,
       });
     }
   };
 
-  const columns: TableColumn<Magazine>[] = [
+  const columns: TableColumn<MagazineArticle>[] = [
     {
-      key: "coverImageUrl",
-      label: "Cover",
-      render: (value, row) => (
-        <div className="w-16 h-20 rounded overflow-hidden bg-gray-200 relative">
-          <Image
-            src={(value as string) || "/placeholder.png"}
-            alt={row.title}
-            fill
-            className="object-cover"
-          />
+      key: "imageUrl",
+      label: "Image",
+      render: (value) => (
+        <div className="w-16 h-16 rounded overflow-hidden bg-gray-200 relative">
+          {value ? (
+            <Image
+              src={value as string}
+              alt="Article"
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              <Upload size={20} />
+            </div>
+          )}
         </div>
       ),
     },
@@ -273,8 +289,8 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
       render: (value) => <span className="font-medium">{value as string}</span>,
     },
     {
-      key: "year",
-      label: "Year",
+      key: "author",
+      label: "Author",
     },
     {
       key: "isPublished",
@@ -314,11 +330,21 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
   return (
     <>
       <Toaster position="top-right" richColors />
-      <DashboardLayout pageTitle="Magazines" adminData={adminData}>
-        <div className="space-y-6">
+      <DashboardLayout pageTitle="Magazine Articles" adminData={adminData}>
+        <div className="space-y-10">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="secondary"
+              onClick={() => router.push("/admin/magazines")}
+              leftIcon={<ArrowLeft size={20} />}
+            >
+              Back to Magazines
+            </Button>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <SearchBar
-              placeholder="Search magazines..."
+              placeholder="Search articles..."
               onSearch={handleSearch}
               className="flex-1 max-w-md"
             />
@@ -327,51 +353,16 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
               onClick={() => handleOpenSheet()}
               leftIcon={<Plus size={20} />}
             >
-              Add Magazine
+              Add Article
             </Button>
-          </div>
-
-          <div className="flex flex-col items-center sm:flex-row gap-4 pt-6">
-            <div>
-              <h3 className="font-medium text-gray-900">Filters:</h3>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant={filterStatus === "all" ? "primary" : "secondary"}
-                onClick={() => {
-                  setFilterStatus("all");
-                  setPage(1);
-                }}
-              >
-                All
-              </Button>
-              <Button
-                variant={filterStatus === "published" ? "primary" : "secondary"}
-                onClick={() => {
-                  setFilterStatus("published");
-                  setPage(1);
-                }}
-              >
-                Published
-              </Button>
-              <Button
-                variant={filterStatus === "draft" ? "primary" : "secondary"}
-                onClick={() => {
-                  setFilterStatus("draft");
-                  setPage(1);
-                }}
-              >
-                Draft
-              </Button>
-            </div>
           </div>
 
           <Table
             columns={columns}
-            data={magazines}
+            data={articles}
             loading={isLoading}
-            emptyMessage="No magazines found"
-            onRowClick={handleViewMagazine}
+            emptyMessage="No articles found"
+            onRowClick={handleView}
             pagination={{
               page,
               totalPages,
@@ -384,18 +375,20 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
         <Sheet
           isOpen={viewSheetOpen}
           onClose={() => setViewSheetOpen(false)}
-          title="Magazine Details"
+          title="Article Details"
         >
-          {viewingMagazine && (
+          {viewingArticle && (
             <div className="space-y-6">
-              <div className="w-full aspect-3/4 rounded-lg bg-gray-200 relative overflow-hidden">
-                <Image
-                  src={viewingMagazine.coverImageUrl}
-                  alt={viewingMagazine.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
+              {viewingArticle.imageUrl && (
+                <div className="w-full aspect-video rounded-lg bg-gray-200 relative overflow-hidden">
+                  <Image
+                    src={viewingArticle.imageUrl}
+                    alt={viewingArticle.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
 
               <div className="space-y-4">
                 <div>
@@ -403,22 +396,33 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
                     Title
                   </label>
                   <p className="text-gray-900 font-medium text-lg">
-                    {viewingMagazine.title}
+                    {viewingArticle.title}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Year
+                    Author
                   </label>
-                  <p className="text-gray-900">{viewingMagazine.year}</p>
+                  <p className="text-gray-900">{viewingArticle.author}</p>
                 </div>
+
+                {viewingArticle.content && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                      Content
+                    </label>
+                    <p className="text-gray-900 whitespace-pre-wrap">
+                      {viewingArticle.content}
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">
                     Status
                   </label>
-                  {renderPublishedBadge(viewingMagazine.isPublished)}
+                  {renderPublishedBadge(viewingArticle.isPublished)}
                 </div>
               </div>
 
@@ -428,7 +432,7 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
                   className="flex-1"
                   onClick={() => {
                     setViewSheetOpen(false);
-                    handleOpenSheet(viewingMagazine);
+                    handleOpenSheet(viewingArticle);
                   }}
                 >
                   Edit
@@ -447,16 +451,16 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
         <Sheet
           isOpen={sheetOpen}
           onClose={handleCloseSheet}
-          title={editingMagazine ? "Edit Magazine" : "Add Magazine"}
+          title={editingArticle ? "Edit Article" : "Add Article"}
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Cover Image <span className="text-red-500">*</span>
+                Article Image (Optional)
               </label>
               <div className="flex items-start gap-6">
                 {imagePreview ? (
-                  <div className="w-48 h-64 rounded-lg overflow-hidden bg-gray-200 relative">
+                  <div className="w-48 h-32 rounded-lg overflow-hidden bg-gray-200 relative">
                     <Image
                       src={imagePreview}
                       alt="Preview"
@@ -466,7 +470,7 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
                     />
                   </div>
                 ) : (
-                  <div className="w-48 h-64 rounded-lg bg-gray-100 flex items-center justify-center">
+                  <div className="w-48 h-32 rounded-lg bg-gray-100 flex items-center justify-center">
                     <Upload size={32} className="text-gray-400" />
                   </div>
                 )}
@@ -477,26 +481,25 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
                     onChange={handleImageChange}
                     className="hidden"
                     id="image-upload"
-                    required={!editingMagazine && !imagePreview}
                   />
                   <label
                     htmlFor="image-upload"
                     className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     <Upload size={16} />
-                    {imagePreview ? "Change Cover" : "Upload Cover"}
+                    {imagePreview ? "Change Image" : "Upload Image"}
                   </label>
                   <p className="text-xs text-gray-500 mt-2">
-                    Recommended: 800x1000px
+                    Recommended: 1200x800px
                   </p>
                 </div>
               </div>
             </div>
 
             <Input
-              label="Magazine Title"
+              label="Article Title"
               type="text"
-              placeholder="Enter magazine title"
+              placeholder="Enter article title"
               value={formData.title}
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
@@ -505,14 +508,24 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
             />
 
             <Input
-              label="Year"
+              label="Author"
               type="text"
-              placeholder="2024"
-              value={formData.year}
+              placeholder="Enter author name"
+              value={formData.author}
               onChange={(e) =>
-                setFormData({ ...formData, year: e.target.value })
+                setFormData({ ...formData, author: e.target.value })
               }
               required
+            />
+
+            <Textarea
+              label="Content"
+              value={formData.content}
+              onChange={(e) =>
+                setFormData({ ...formData, content: e.target.value })
+              }
+              rows={8}
+              placeholder="Article content..."
             />
 
             <div className="flex items-center gap-3">
@@ -542,9 +555,9 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
               >
                 {uploadingImage
                   ? "Uploading Image..."
-                  : editingMagazine
-                    ? "Update Magazine"
-                    : "Add Magazine"}
+                  : editingArticle
+                    ? "Update Article"
+                    : "Add Article"}
               </Button>
               <Button
                 type="button"
@@ -562,8 +575,8 @@ const MagazinesPage = ({ adminData }: DashboardPageProps) => {
           isOpen={deleteModal.isOpen}
           onClose={() => setDeleteModal({ isOpen: false, id: null })}
           onConfirm={() => deleteModal.id && handleDelete(deleteModal.id)}
-          title="Delete Magazine"
-          message="Are you sure you want to delete this magazine? This action cannot be undone."
+          title="Delete Article"
+          message="Are you sure you want to delete this article? This action cannot be undone."
           confirmText="Delete"
           type="danger"
         />
@@ -589,4 +602,4 @@ export const getServerSideProps = async ({ req }: { req: NextApiRequest }) => {
   };
 };
 
-export default MagazinesPage;
+export default MagazineArticlesPage;

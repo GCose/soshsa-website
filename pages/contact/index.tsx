@@ -1,18 +1,50 @@
 import { useState } from "react";
-import Layout from "@/components/website/Layout";
 import { motion } from "framer-motion";
+import { BASE_URL } from "@/utils/url";
+import { toast, Toaster } from "sonner";
+import axios, { AxiosError } from "axios";
+import { getErrorMessage } from "@/utils/error";
+import Layout from "@/components/website/Layout";
+import { CustomError, ErrorResponseData } from "@/types";
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
-    name: "",
+    fullName: "",
     email: "",
     phone: "",
+    subject: "",
     message: "",
   });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    setSubmitting(true);
+
+    try {
+      await axios.post(`${BASE_URL}/inbox`, formData);
+      toast.success("Message sent successfully!", {
+        description: "We'll get back to you as soon as possible.",
+        duration: 5000,
+      });
+      setFormData({
+        fullName: "",
+        email: "",
+        phone: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error) {
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error("Failed to send message", {
+        description: message,
+        duration: 4000,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleChange = (
@@ -29,6 +61,7 @@ const ContactPage = () => {
       title="Contact Us | SoSHSA"
       description="Get in touch with the Social Sciences and Humanities Students' Association at UTG."
     >
+      <Toaster position="top-right" richColors />
       <section className="relative min-h-screen bg-white py-20">
         <div className="w-full px-6 lg:px-8 max-w-7xl mx-auto">
           <motion.div
@@ -165,16 +198,16 @@ const ContactPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label
-                      htmlFor="name"
+                      htmlFor="fullName"
                       className="block text-sm font-semibold text-gray-700 mb-2"
                     >
                       Full Name *
                     </label>
                     <input
                       type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
+                      id="fullName"
+                      name="fullName"
+                      value={formData.fullName}
                       onChange={handleChange}
                       required
                       className="w-full px-4 py-3 border-b-2 border-gray-300 focus:border-primary outline-none transition-colors bg-transparent"
@@ -207,7 +240,7 @@ const ContactPage = () => {
                     htmlFor="phone"
                     className="block text-sm font-semibold text-gray-700 mb-2"
                   >
-                    Phone Number
+                    Phone Number *
                   </label>
                   <input
                     type="tel"
@@ -215,8 +248,28 @@ const ContactPage = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
+                    required
                     className="w-full px-4 py-3 border-b-2 border-gray-300 focus:border-primary outline-none transition-colors bg-transparent"
                     placeholder="+220 123 4567"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="subject"
+                    className="block text-sm font-semibold text-gray-700 mb-2"
+                  >
+                    Subject *
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 border-b-2 border-gray-300 focus:border-primary outline-none transition-colors bg-transparent"
+                    placeholder="What's this about?"
                   />
                 </div>
 
@@ -241,9 +294,10 @@ const ContactPage = () => {
 
                 <button
                   type="submit"
-                  className="w-full bg-primary text-white py-4 px-8 font-semibold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-3 group"
+                  disabled={submitting}
+                  className="w-full bg-primary text-white py-4 px-8 font-semibold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Send Message
+                  {submitting ? "Sending..." : "Send Message"}
                   <svg
                     className="w-5 h-5 transition-transform group-hover:translate-x-2"
                     fill="none"

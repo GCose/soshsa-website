@@ -57,7 +57,7 @@ const SignInPage = () => {
   return (
     <>
       <Head>
-        <title>Sign In | SoSHSA Admin</title>
+        <title>SoSHSA Admin | Sign In</title>
       </Head>
 
       <Toaster position="top-right" richColors />

@@ -1,17 +1,49 @@
-import { useState } from "react";
+import useSWR from "swr";
+import { NextApiRequest } from "next";
+import { BASE_URL } from "@/utils/url";
+import { Toaster, toast } from "sonner";
+import axios, { AxiosError } from "axios";
+import { isLoggedIn } from "@/utils/auth";
+import { useState, FormEvent } from "react";
+import { getErrorMessage } from "@/utils/error";
+import { Eye, EyeOff, User, Lock } from "lucide-react";
+import Button from "@/components/dashboard/ui/Button";
 import Input from "@/components/dashboard/ui/InputField";
-import { Eye, EyeOff, Save, User, Lock, Bell } from "lucide-react";
+import { CustomError, ErrorResponseData, TabType } from "@/types";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
+import { AdminProfile, DashboardPageProps } from "@/types/interface/dashboard";
 
-type TabType = "profile" | "security" | "notifications";
-
-const SettingsPage = () => {
+const SettingsPage = ({ adminData }: DashboardPageProps) => {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
 
+  const fetchProfile = async (): Promise<AdminProfile> => {
+    const { data } = await axios.get(`${BASE_URL}/admin/profile`, {
+      headers: { Authorization: `Bearer ${adminData.token}` },
+    });
+    return data.data;
+  };
+
+  const { data: profile, mutate } = useSWR(
+    ["admin-profile", adminData.token],
+    fetchProfile,
+    {
+      revalidateOnFocus: false,
+      onError: (error) => {
+        const { message } = getErrorMessage(
+          error as AxiosError<ErrorResponseData> | CustomError | Error,
+        );
+        toast.error("Failed to load profile", {
+          description: message,
+          duration: 4000,
+        });
+      },
+    },
+  );
+
   const [profileSettings, setProfileSettings] = useState({
-    firstName: "Admin",
-    lastName: "User",
-    email: "admin@soshsa.com",
+    firstName: profile?.firstName || adminData.firstName,
+    lastName: profile?.lastName || adminData.lastName,
+    email: profile?.email || adminData.email,
   });
 
   const [passwordSettings, setPasswordSettings] = useState({
@@ -26,375 +58,335 @@ const SettingsPage = () => {
     confirm: false,
   });
 
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    newComments: true,
-    newSubmissions: true,
-    weeklyDigest: false,
-  });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
-  const handleProfileSave = (e: React.FormEvent) => {
+  const handleProfileSave = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("Profile settings saved:", profileSettings);
+    setSavingProfile(true);
+
+    try {
+      const { data } = await axios.patch(
+        `${BASE_URL}/admin/profile`,
+        profileSettings,
+        {
+          headers: { Authorization: `Bearer ${adminData.token}` },
+        },
+      );
+
+      await axios.post("/api/admin/update-cookie", {
+        token: adminData.token,
+        userId: adminData.userId,
+        email: data.data.email,
+        firstName: data.data.firstName,
+        lastName: data.data.lastName,
+      });
+
+      toast.success("Profile updated successfully");
+      mutate();
+
+      window.location.reload();
+    } catch (error) {
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error("Failed to update profile", {
+        description: message,
+        duration: 4000,
+      });
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
-  const handlePasswordSave = (e: React.FormEvent) => {
+  const handlePasswordSave = async (e: FormEvent) => {
     e.preventDefault();
+
     if (passwordSettings.newPassword !== passwordSettings.confirmPassword) {
-      alert("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
-    console.log("Password changed");
-    setPasswordSettings({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
-  };
 
-  const handleNotificationSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Notification settings saved:", notificationSettings);
+    setSavingPassword(true);
+
+    try {
+      await axios.patch(
+        `${BASE_URL}/admin/profile`,
+        { password: passwordSettings.newPassword },
+        {
+          headers: { Authorization: `Bearer ${adminData.token}` },
+        },
+      );
+      toast.success("Password changed successfully");
+      setPasswordSettings({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error("Failed to change password", {
+        description: message,
+        duration: 4000,
+      });
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   const tabs = [
     { id: "profile" as TabType, label: "Profile", icon: User },
     { id: "security" as TabType, label: "Security", icon: Lock },
-    { id: "notifications" as TabType, label: "Notifications", icon: Bell },
   ];
 
   return (
-    <DashboardLayout pageTitle="Settings">
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="w-full lg:w-64 shrink-0">
-          <div className="bg-white">
-            <div className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                      activeTab === tab.id
-                        ? "bg-primary text-white"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Icon size={18} />
-                    <span>{tab.label}</span>
-                  </button>
-                );
-              })}
+    <>
+      <Toaster position="top-right" richColors />
+      <DashboardLayout pageTitle="Settings" adminData={adminData}>
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="w-full lg:w-64 shrink-0">
+            <div className="bg-white">
+              <div className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`cursor-pointer flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                        activeTab === tab.id
+                          ? "bg-primary text-white"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Icon size={18} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <div className="bg-white px-6 py-4 border-l border-teal-300">
+              {activeTab === "profile" && (
+                <div>
+                  <div className="mb-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">
+                      Profile Information
+                    </h2>
+                    <p className="text-gray-600 text-sm">
+                      Update your personal account details
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleProfileSave} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input
+                      className="border-teal-100"
+                        label="First Name"
+                        type="text"
+                        value={profileSettings.firstName}
+                        onChange={(e) =>
+                          setProfileSettings({
+                            ...profileSettings,
+                            firstName: e.target.value,
+                          })
+                        }
+                        required
+                      />
+
+                      <Input
+                      className="border-teal-100"
+                        label="Last Name"
+                        type="text"
+                        value={profileSettings.lastName}
+                        onChange={(e) =>
+                          setProfileSettings({
+                            ...profileSettings,
+                            lastName: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                    </div>
+
+                    <Input
+                    className="border-teal-100"
+                      label="Email Address"
+                      type="email"
+                      value={profileSettings.email}
+                      onChange={(e) =>
+                        setProfileSettings({
+                          ...profileSettings,
+                          email: e.target.value,
+                        })
+                      }
+                      required
+                    />
+
+                    <div className="pt-4">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        isLoading={savingProfile}
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {activeTab === "security" && (
+                <div>
+                  <div className="mb-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">
+                      Change Password
+                    </h2>
+                    <p className="text-gray-600 text-sm">
+                      Update your password to keep your account secure
+                    </p>
+                  </div>
+
+                  <form onSubmit={handlePasswordSave} className="space-y-4">
+                    <div className="relative">
+                      <Input
+                      className="border-teal-100"
+                        label="Current Password"
+                        type={showPasswords.current ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={passwordSettings.currentPassword}
+                        onChange={(e) =>
+                          setPasswordSettings({
+                            ...passwordSettings,
+                            currentPassword: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowPasswords({
+                            ...showPasswords,
+                            current: !showPasswords.current,
+                          })
+                        }
+                        className="cursor-pointer absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPasswords.current ? (
+                          <EyeOff size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="relative">
+                      <Input
+                      className="border-teal-100"
+                        label="New Password"
+                        type={showPasswords.new ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={passwordSettings.newPassword}
+                        onChange={(e) =>
+                          setPasswordSettings({
+                            ...passwordSettings,
+                            newPassword: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowPasswords({
+                            ...showPasswords,
+                            new: !showPasswords.new,
+                          })
+                        }
+                        className="cursor-pointer absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPasswords.new ? (
+                          <EyeOff size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="relative">
+                      <Input
+                      className="border-teal-100"
+                        label="Confirm New Password"
+                        type={showPasswords.confirm ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={passwordSettings.confirmPassword}
+                        onChange={(e) =>
+                          setPasswordSettings({
+                            ...passwordSettings,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowPasswords({
+                            ...showPasswords,
+                            confirm: !showPasswords.confirm,
+                          })
+                        }
+                        className="cursor-pointer absolute right-3 top-9 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPasswords.confirm ? (
+                          <EyeOff size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="pt-4">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        isLoading={savingPassword}
+                      >
+                        Change Password
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              )}
             </div>
           </div>
         </div>
-
-        <div className="flex-1">
-          <div className="bg-white px-6 py-4 border-l border-teal-300">
-            {activeTab === "profile" && (
-              <div>
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">
-                    Profile Information
-                  </h2>
-                  <p className="text-gray-600 text-sm">
-                    Update your personal account details
-                  </p>
-                </div>
-
-                <form onSubmit={handleProfileSave} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      label="First Name"
-                      type="text"
-                      value={profileSettings.firstName}
-                      onChange={(e) =>
-                        setProfileSettings({
-                          ...profileSettings,
-                          firstName: e.target.value,
-                        })
-                      }
-                      required
-                    />
-
-                    <Input
-                      label="Last Name"
-                      type="text"
-                      value={profileSettings.lastName}
-                      onChange={(e) =>
-                        setProfileSettings({
-                          ...profileSettings,
-                          lastName: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <Input
-                    label="Email Address"
-                    type="email"
-                    value={profileSettings.email}
-                    onChange={(e) =>
-                      setProfileSettings({
-                        ...profileSettings,
-                        email: e.target.value,
-                      })
-                    }
-                    required
-                  />
-
-                  <div className="flex justify-end pt-4">
-                    <button
-                      type="submit"
-                      className="cursor-pointer flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                    >
-                      <Save size={18} />
-                      Save Changes
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {activeTab === "security" && (
-              <div>
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">
-                    Change Password
-                  </h2>
-                  <p className="text-gray-600 text-sm">
-                    Update your password to keep your account secure
-                  </p>
-                </div>
-
-                <form onSubmit={handlePasswordSave} className="space-y-4">
-                  <div className="relative">
-                    <Input
-                      label="Current Password"
-                      type={showPasswords.current ? "text" : "password"}
-                      value={passwordSettings.currentPassword}
-                      onChange={(e) =>
-                        setPasswordSettings({
-                          ...passwordSettings,
-                          currentPassword: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowPasswords({
-                          ...showPasswords,
-                          current: !showPasswords.current,
-                        })
-                      }
-                      className="cursor-pointer absolute right-3 top-9 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPasswords.current ? (
-                        <EyeOff size={20} />
-                      ) : (
-                        <Eye size={20} />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="relative">
-                    <Input
-                      label="New Password"
-                      type={showPasswords.new ? "text" : "password"}
-                      value={passwordSettings.newPassword}
-                      onChange={(e) =>
-                        setPasswordSettings({
-                          ...passwordSettings,
-                          newPassword: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowPasswords({
-                          ...showPasswords,
-                          new: !showPasswords.new,
-                        })
-                      }
-                      className="cursor-pointer absolute right-3 top-9 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPasswords.new ? (
-                        <EyeOff size={20} />
-                      ) : (
-                        <Eye size={20} />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="relative">
-                    <Input
-                      label="Confirm New Password"
-                      type={showPasswords.confirm ? "text" : "password"}
-                      value={passwordSettings.confirmPassword}
-                      onChange={(e) =>
-                        setPasswordSettings({
-                          ...passwordSettings,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowPasswords({
-                          ...showPasswords,
-                          confirm: !showPasswords.confirm,
-                        })
-                      }
-                      className="cursor-pointer absolute right-3 top-9 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPasswords.confirm ? (
-                        <EyeOff size={20} />
-                      ) : (
-                        <Eye size={20} />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <button
-                      type="submit"
-                      className="cursor-pointer flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                    >
-                      <Save size={18} />
-                      Update Password
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {activeTab === "notifications" && (
-              <div>
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">
-                    Notification Preferences
-                  </h2>
-                  <p className="text-gray-600 text-sm">
-                    Choose what notifications you want to receive
-                  </p>
-                </div>
-
-                <form onSubmit={handleNotificationSave} className="space-y-4">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <label className="text-sm font-medium text-gray-900">
-                          Email Notifications
-                        </label>
-                        <p className="text-xs text-gray-600 mt-1">
-                          Receive email notifications for important updates
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={notificationSettings.emailNotifications}
-                        onChange={(e) =>
-                          setNotificationSettings({
-                            ...notificationSettings,
-                            emailNotifications: e.target.checked,
-                          })
-                        }
-                        className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <label className="text-sm font-medium text-gray-900">
-                          New Comments
-                        </label>
-                        <p className="text-xs text-gray-600 mt-1">
-                          Get notified when someone comments on articles
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={notificationSettings.newComments}
-                        onChange={(e) =>
-                          setNotificationSettings({
-                            ...notificationSettings,
-                            newComments: e.target.checked,
-                          })
-                        }
-                        className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <label className="text-sm font-medium text-gray-900">
-                          New Contact Submissions
-                        </label>
-                        <p className="text-xs text-gray-600 mt-1">
-                          Get notified when someone submits the contact form
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={notificationSettings.newSubmissions}
-                        onChange={(e) =>
-                          setNotificationSettings({
-                            ...notificationSettings,
-                            newSubmissions: e.target.checked,
-                          })
-                        }
-                        className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <label className="text-sm font-medium text-gray-900">
-                          Weekly Digest
-                        </label>
-                        <p className="text-xs text-gray-600 mt-1">
-                          Receive a weekly summary of activity
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={notificationSettings.weeklyDigest}
-                        onChange={(e) =>
-                          setNotificationSettings({
-                            ...notificationSettings,
-                            weeklyDigest: e.target.checked,
-                          })
-                        }
-                        className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-4">
-                    <button
-                      type="submit"
-                      className="cursor-pointer flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                    >
-                      <Save size={18} />
-                      Save Preferences
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </DashboardLayout>
+      </DashboardLayout>
+    </>
   );
+};
+
+export const getServerSideProps = async ({ req }: { req: NextApiRequest }) => {
+  const adminData = isLoggedIn(req);
+
+  if (!adminData) {
+    return {
+      redirect: {
+        destination: "/admin/auth/sign-in",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: { adminData },
+  };
 };
 
 export default SettingsPage;
