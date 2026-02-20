@@ -14,13 +14,14 @@ import {
   MessageSquare,
   GraduationCap,
   LayoutDashboard,
-  Link as LinkIcon,
+  // Link as LinkIcon,
   ArrowLeftIcon,
   ChevronDown,
   User,
-  Video,
-  FileText,
-  Download,
+  Newspaper,
+  // Video,
+  // FileText,
+  // Download,
 } from "lucide-react";
 import { DashboardLayoutProps } from "@/types/interface/dashboard";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
@@ -60,7 +61,7 @@ const DashboardLayout = ({
       items: [
         { name: "Councils", href: "/admin/councils", icon: Users },
         { name: "Events", href: "/admin/events", icon: Calendar },
-        { name: "News", href: "/admin/news", icon: BookOpen },
+        { name: "News", href: "/admin/news", icon: Newspaper },
         { name: "Magazines", href: "/admin/magazines", icon: BookOpen },
         { name: "Comments", href: "/admin/comments", icon: MessageSquare },
       ],
@@ -73,33 +74,33 @@ const DashboardLayout = ({
           href: "/admin/induction/courses",
           icon: GraduationCap,
         },
-        {
-          name: "Portal Guide",
-          href: "/admin/induction/portal-guide",
-          icon: FileText,
-        },
-        {
-          name: "Association Intro",
-          href: "/admin/induction/intro",
-          icon: Video,
-        },
+        // {
+        //   name: "Portal Guide",
+        //   href: "/admin/induction/portal-guide",
+        //   icon: FileText,
+        // },
+        // {
+        //   name: "Association Intro",
+        //   href: "/admin/induction/intro",
+        //   icon: Video,
+        // },
       ],
     },
-    {
-      title: "RESOURCES",
-      items: [
-        {
-          name: "Citation Files",
-          href: "/admin/resources/citations",
-          icon: Download,
-        },
-        {
-          name: "Useful Links",
-          href: "/admin/resources/links",
-          icon: LinkIcon,
-        },
-      ],
-    },
+    // {
+    //   title: "RESOURCES",
+    //   items: [
+    //     {
+    //       name: "Citation Files",
+    //       href: "/admin/resources/citations",
+    //       icon: Download,
+    //     },
+    //     {
+    //       name: "Useful Links",
+    //       href: "/admin/resources/links",
+    //       icon: LinkIcon,
+    //     },
+    //   ],
+    // },
     {
       title: "SYSTEM",
       items: [
