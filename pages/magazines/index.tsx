@@ -43,7 +43,7 @@ const MagazinesPage = () => {
 
   return (
     <Layout
-      title="Magazine | SoSHSA"
+      title="SoSHSA | Magazines"
       description="Explore past issues of the SoSHSA Magazine featuring articles, research, and stories from our community."
     >
       <section className="relative bg-white py-10 lg:py-15">
@@ -74,6 +74,9 @@ const MagazinesPage = () => {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
             >
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                No Magazines Available
+              </h1>
               <p className="text-gray-500 text-lg">
                 No magazine issues available at the moment.
               </p>

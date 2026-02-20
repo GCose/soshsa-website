@@ -45,7 +45,6 @@ const ArticleDetailPage = () => {
 
   const handleCommentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // No functionality - API doesn't exist
     alert("Comment feature coming soon! User authentication required.");
     setCommentText("");
   };

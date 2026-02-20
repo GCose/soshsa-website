@@ -50,7 +50,7 @@ const EventsPage = () => {
 
   return (
     <Layout
-      title="Events | SoSHSA"
+      title="SoSHSA | Events"
       description="Join us for engaging programs, workshops, and community initiatives designed to empower students."
     >
       <section className="relative bg-white py-10 lg:py-15">
@@ -105,13 +105,16 @@ const EventsPage = () => {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
             >
+              <h1 className="text-2xl font-bold uppercase text-gray-900 mb-4">
+                No Events Found
+              </h1>
               <p className="text-gray-500 text-lg">
                 No events available at the moment.
               </p>
             </motion.div>
           ) : (
             <motion.div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -126,11 +129,11 @@ const EventsPage = () => {
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
                   <Link href={`/events/${event.id}`} className="group block">
-                    <div className="relative h-96 overflow-hidden bg-gray-200 mb-4 rounded-lg">
+                    <div className="relative h-96 overflow-hidden bg-gray-200 mb-4">
                       <Image
-                        src={event.imageUrl}
-                        alt={event.title}
                         fill
+                        alt={event.title}
+                        src={event.imageUrl}
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />

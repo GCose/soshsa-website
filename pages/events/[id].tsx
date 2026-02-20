@@ -2,9 +2,9 @@ import useSWR from "swr";
 import axios from "axios";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { BASE_URL } from "@/utils/url";
+import { useRouter } from "next/router";
 import Layout from "@/components/website/Layout";
 
 interface Event {
@@ -41,7 +41,7 @@ const EventDetailPage = () => {
 
   if (isLoading) {
     return (
-      <Layout title="Loading... | SoSHSA" description="Loading event details">
+      <Layout title="SoSHSA | Loading..." description="Loading event details">
         <div className="min-h-screen flex items-center justify-center">
           <p className="text-gray-500 text-lg">Loading event...</p>
         </div>
@@ -51,7 +51,7 @@ const EventDetailPage = () => {
 
   if (!event) {
     return (
-      <Layout title="Event Not Found | SoSHSA" description="Event not found">
+      <Layout title="SoSHSA | Event Not Found" description="Event not found">
         <div className="min-h-screen flex items-center justify-center">
           <p className="text-gray-500 text-lg">Event not found</p>
         </div>
@@ -60,7 +60,7 @@ const EventDetailPage = () => {
   }
 
   return (
-    <Layout title={`${event.title} | SoSHSA`} description={event.description}>
+    <Layout title={`SOSHSA | ${event.title}`} description={event.description}>
       <article className="relative bg-white py-10 lg:py-15">
         <div className="w-full max-w-7xl mx-auto px-6 lg:px-8">
           <Link
