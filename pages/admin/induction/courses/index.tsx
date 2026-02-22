@@ -308,7 +308,7 @@ const CoursesPage = ({ adminData }: DashboardPageProps) => {
   return (
     <>
       <Toaster position="top-right" richColors />
-      <DashboardLayout pageTitle="Courses" adminData={adminData}>
+      <DashboardLayout pageTitle="Course Brochures" adminData={adminData}>
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <SearchBar

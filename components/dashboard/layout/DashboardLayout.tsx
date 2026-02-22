@@ -70,7 +70,7 @@ const DashboardLayout = ({
       title: "INDUCTION",
       items: [
         {
-          name: "Courses",
+          name: "Course Brochures",
           href: "/admin/induction/courses",
           icon: GraduationCap,
         },
