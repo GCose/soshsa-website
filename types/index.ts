@@ -30,3 +30,6 @@ export type FilterStatus = "all" | "published" | "draft";
 export type TabType = "profile" | "security";
 
 export type InboxFilterStatus = "all" | "unread" | "read" | "resolved";
+
+export type FilterYear = "all" | 1 | 2 | 3 | 4 | 5;
+export type CourseFilterStatus = "all" | "true" | "false";

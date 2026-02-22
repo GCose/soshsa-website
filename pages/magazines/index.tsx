@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { BASE_URL } from "@/utils/url";
 import Layout from "@/components/website/Layout";
+import { MagazineSkeleton } from "@/components/website/skeletons/Skeleton";
 
 interface Magazine {
   id: string;
@@ -21,9 +22,14 @@ const fetchPublishedMagazines = async (): Promise<Magazine[]> => {
 };
 
 const MagazinesPage = () => {
-  const { data: magazines = [] } = useSWR(
+  const { data: magazines = [], isLoading } = useSWR(
     "published-magazines",
     fetchPublishedMagazines,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
   );
 
   const groupedByYear = magazines.reduce(
@@ -67,7 +73,13 @@ const MagazinesPage = () => {
             </p>
           </motion.div>
 
-          {magazines.length === 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {[...Array(10)].map((_, i) => (
+                <MagazineSkeleton key={i} />
+              ))}
+            </div>
+          ) : magazines.length === 0 ? (
             <motion.div
               className="text-center py-20"
               initial={{ opacity: 0 }}
@@ -86,7 +98,7 @@ const MagazinesPage = () => {
               {years.map((year) => (
                 <motion.div
                   key={year}
-                  initial={{ opacity: 0, y: 40 }}
+                  initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6 }}
@@ -94,31 +106,35 @@ const MagazinesPage = () => {
                   <h2 className="text-3xl font-bold text-gray-900 mb-8">
                     {year}
                   </h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     {groupedByYear[year].map((magazine, index) => (
                       <motion.div
                         key={magazine.id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: index * 0.1 }}
+                        transition={{ duration: 0.4, delay: index * 0.05 }}
                       >
                         <Link
                           href={`/magazines/${magazine.id}`}
                           className="group block"
                         >
-                          <div className="relative aspect-3/4 rounded-lg overflow-hidden bg-gray-200 shadow-md group-hover:shadow-xl transition-shadow">
+                          <div className="relative aspect-3/4 bg-gray-800 overflow-hidden mb-4">
                             <Image
                               src={magazine.coverImageUrl}
                               alt={magazine.title}
                               fill
-                              className="object-cover transition-transform duration-700 group-hover:scale-105"
+                              className="object-cover transition-transform duration-500 group-hover:scale-105"
                             />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                           </div>
-                          <h3 className="mt-3 text-lg uppercase font-medium text-gray-900 group-hover:text-primary transition-colors line-clamp-2">
-                            {magazine.title}
-                          </h3>
+                          <div className="flex justify-between items-center">
+                            <h3 className="text-base font-bold text-gray-900 group-hover:text-primary transition-colors">
+                              {magazine.title}
+                            </h3>
+                            <span className="text-gray-500 text-sm">
+                              {magazine.year}
+                            </span>
+                          </div>
                         </Link>
                       </motion.div>
                     ))}

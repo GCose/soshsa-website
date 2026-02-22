@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { BASE_URL } from "@/utils/url";
 import Layout from "@/components/website/Layout";
+import { NewsCardSkeleton } from "@/components/website/skeletons/Skeleton";
 
 interface NewsArticle {
   id: string;
@@ -24,7 +25,15 @@ const fetchPublishedNews = async (): Promise<NewsArticle[]> => {
 };
 
 const NewsPage = () => {
-  const { data: articles = [] } = useSWR("published-news", fetchPublishedNews);
+  const { data: articles = [], isLoading } = useSWR(
+    "published-news",
+    fetchPublishedNews,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
+  );
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -60,7 +69,13 @@ const NewsPage = () => {
             </p>
           </motion.div>
 
-          {articles.length === 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, i) => (
+                <NewsCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : articles.length === 0 ? (
             <motion.div
               className="text-center py-20"
               initial={{ opacity: 0 }}

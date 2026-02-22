@@ -7,30 +7,38 @@ import { motion } from "framer-motion";
 import { BASE_URL } from "@/utils/url";
 import Layout from "@/components/website/Layout";
 import Button from "@/components/dashboard/ui/Button";
+import { EventSkeleton } from "@/components/website/skeletons/Skeleton";
 
 interface Event {
   id: string;
-  type: string;
-  date: string;
   title: string;
+  date: string;
   location: string;
-  imageUrl: string;
+  type: string;
   description?: string;
+  imageUrl: string;
+  isFeatured: boolean;
 }
 
 const fetchPublishedEvents = async (): Promise<Event[]> => {
   const { data } = await axios.get(`${BASE_URL}/events`, {
-    params: { isPublished: true, limit: 12 },
+    params: { isPublished: true, limit: 50 },
   });
   return data.data.data;
 };
 
 const EventsPage = () => {
-  const { data: events = [] } = useSWR(
+  const [selectedType, setSelectedType] = useState<string>("all");
+
+  const { data: events = [], isLoading } = useSWR(
     "published-events",
     fetchPublishedEvents,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
   );
-  const [selectedType, setSelectedType] = useState<string>("all");
 
   const eventTypes = ["all", ...Array.from(new Set(events.map((e) => e.type)))];
 
@@ -51,7 +59,7 @@ const EventsPage = () => {
   return (
     <Layout
       title="SoSHSA | Events"
-      description="Join us for engaging programs, workshops, and community initiatives designed to empower students."
+      description="Explore upcoming and past events from the Social Sciences and Humanities Students Association."
     >
       <section className="relative bg-white py-10 lg:py-15">
         <div className="w-full px-6 lg:px-8">
@@ -63,15 +71,14 @@ const EventsPage = () => {
             transition={{ duration: 0.6 }}
           >
             <p className="text-primary text-sm uppercase tracking-widest mb-4">
-              Get Involved
+              What{"'"}s Happening
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
-              Upcoming Events
+              Events & Programs
             </h1>
             <p className="text-xl text-gray-600 leading-relaxed">
               Join us for engaging programs, workshops, and community
-              initiatives designed to empower students across social sciences
-              and humanities.
+              initiatives designed to empower students.
             </p>
           </motion.div>
 
@@ -98,7 +105,13 @@ const EventsPage = () => {
             ))}
           </motion.div>
 
-          {filteredEvents.length === 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {[...Array(6)].map((_, i) => (
+                <EventSkeleton key={i} />
+              ))}
+            </div>
+          ) : filteredEvents.length === 0 ? (
             <motion.div
               className="text-center py-20"
               initial={{ opacity: 0 }}
@@ -138,12 +151,12 @@ const EventsPage = () => {
                       />
                       <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
 
-                      <div className="absolute top-4 left-4">
-                        <div className="bg-primary px-3 py-2 text-white rounded">
-                          <div className="text-xl font-bold leading-none">
+                      <div className="absolute top-6 left-6">
+                        <div className="bg-primary px-4 py-2 text-white">
+                          <div className="text-2xl font-bold leading-none">
                             {formatDate(event.date).day}
                           </div>
-                          <div className="text-xs uppercase mt-1">
+                          <div className="text-xs uppercase tracking-wide">
                             {formatDate(event.date).month}
                           </div>
                         </div>
@@ -151,18 +164,13 @@ const EventsPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <span className="inline-block text-xs uppercase tracking-wide text-primary font-medium">
+                      <span className="text-xs uppercase tracking-wide text-primary font-medium">
                         {event.type}
                       </span>
-                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary transition-colors">
+                      <h3 className="text-xl uppercase font-bold text-gray-900 group-hover:text-primary transition-colors">
                         {event.title}
                       </h3>
-                      {event.description && (
-                        <p className="text-gray-600 line-clamp-2">
-                          {event.description}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 text-sm text-gray-500 pt-2">
+                      <p className="text-sm text-gray-600 flex items-center gap-2">
                         <svg
                           className="w-4 h-4"
                           fill="none"
@@ -183,7 +191,7 @@ const EventsPage = () => {
                           />
                         </svg>
                         {event.location}
-                      </div>
+                      </p>
                     </div>
                   </Link>
                 </motion.div>

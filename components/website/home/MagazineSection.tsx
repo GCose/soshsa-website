@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { BASE_URL } from "@/utils/url";
+import { HomeMagazineSkeletonGrid } from "@/components/website/skeletons/Skeleton";
 
 const MagazineSection = () => {
   const fetchMagazines = async () => {
@@ -20,10 +21,14 @@ const MagazineSection = () => {
   const { data: magazines = [], isLoading } = useSWR(
     "latest-magazines",
     fetchMagazines,
-    { revalidateOnFocus: false },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
   );
 
-  if (isLoading || magazines.length === 0) {
+  if (!isLoading && magazines.length === 0) {
     return null;
   }
 
@@ -80,72 +85,58 @@ const MagazineSection = () => {
           </div>
 
           <div className="col-span-12 lg:col-span-8 overflow-hidden">
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <div className="grid grid-cols-12 gap-6">
-                <div className="col-span-12 sm:col-span-6 lg:col-span-7">
-                  <Link
-                    href={`/magazines/${magazines[0].id}`}
-                    className="group block"
-                  >
-                    <div className="relative aspect-3/4 bg-gray-800 overflow-hidden mb-4">
-                      <Image
-                        src={magazines[0].coverImageUrl}
-                        alt={magazines[0].title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-2xl font-bold text-white group-hover:text-primary transition-colors">
-                        {magazines[0].title}
-                      </h3>
-                      <span className="text-white/60 text-sm">
-                        {magazines[0].year}
-                      </span>
-                    </div>
-                  </Link>
-                </div>
-
-                {magazines[1] && (
-                  <div className="col-span-12 sm:col-span-6 lg:col-span-5 lg:mt-12">
+            {isLoading ? (
+              <motion.div
+                initial={{ opacity: 0, x: 40 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <HomeMagazineSkeletonGrid />
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, x: 40 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <div className="grid grid-cols-12 gap-6">
+                  <div className="col-span-12 sm:col-span-6 lg:col-span-7">
                     <Link
-                      href={`/magazines/${magazines[1].id}`}
-                      className="group block mb-8"
+                      href={`/magazines/${magazines[0].id}`}
+                      className="group block"
                     >
                       <div className="relative aspect-3/4 bg-gray-800 overflow-hidden mb-4">
                         <Image
-                          src={magazines[1].coverImageUrl}
-                          alt={magazines[1].title}
+                          src={magazines[0].coverImageUrl}
+                          alt={magazines[0].title}
                           fill
                           className="object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                       <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">
-                          {magazines[1].title}
+                        <h3 className="text-2xl font-bold text-white group-hover:text-primary transition-colors">
+                          {magazines[0].title}
                         </h3>
                         <span className="text-white/60 text-sm">
-                          {magazines[1].year}
+                          {magazines[0].year}
                         </span>
                       </div>
                     </Link>
+                  </div>
 
-                    {magazines[2] && (
+                  {magazines[1] && (
+                    <div className="col-span-12 sm:col-span-6 lg:col-span-5 lg:mt-12">
                       <Link
-                        href={`/magazines/${magazines[2].id}`}
-                        className="group block"
+                        href={`/magazines/${magazines[1].id}`}
+                        className="group block mb-8"
                       >
                         <div className="relative aspect-3/4 bg-gray-800 overflow-hidden mb-4">
                           <Image
-                            src={magazines[2].coverImageUrl}
-                            alt={magazines[2].title}
+                            src={magazines[1].coverImageUrl}
+                            alt={magazines[1].title}
                             fill
                             className="object-cover transition-transform duration-500 group-hover:scale-105"
                           />
@@ -153,18 +144,43 @@ const MagazineSection = () => {
                         </div>
                         <div className="flex justify-between items-center">
                           <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">
-                            {magazines[2].title}
+                            {magazines[1].title}
                           </h3>
                           <span className="text-white/60 text-sm">
-                            {magazines[2].year}
+                            {magazines[1].year}
                           </span>
                         </div>
                       </Link>
-                    )}
-                  </div>
-                )}
-              </div>
-            </motion.div>
+
+                      {magazines[2] && (
+                        <Link
+                          href={`/magazines/${magazines[2].id}`}
+                          className="group block"
+                        >
+                          <div className="relative aspect-3/4 bg-gray-800 overflow-hidden mb-4">
+                            <Image
+                              src={magazines[2].coverImageUrl}
+                              alt={magazines[2].title}
+                              fill
+                              className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-white group-hover:text-primary transition-colors">
+                              {magazines[2].title}
+                            </h3>
+                            <span className="text-white/60 text-sm">
+                              {magazines[2].year}
+                            </span>
+                          </div>
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>

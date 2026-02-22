@@ -2,10 +2,11 @@ import useSWR from "swr";
 import axios from "axios";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/router";
 import { motion } from "framer-motion";
 import { BASE_URL } from "@/utils/url";
+import { useRouter } from "next/router";
 import Layout from "@/components/website/Layout";
+import { MagazineDetailSkeleton } from "@/components/website/skeletons/Skeleton";
 
 interface Magazine {
   id: string;
@@ -42,19 +43,31 @@ const MagazineDetailPage = () => {
   const { data: magazine, isLoading: magazineLoading } = useSWR(
     id ? `magazine-${id}` : null,
     () => fetchMagazine(id as string),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
   );
 
   const { data: articles = [], isLoading: articlesLoading } = useSWR(
     id ? `magazine-articles-${id}` : null,
     () => fetchMagazineArticles(id as string),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
   );
 
-  if (magazineLoading || articlesLoading) {
+  const isLoading = magazineLoading || articlesLoading;
+
+  if (isLoading) {
     return (
-      <Layout title="Loading... | SoSHSA" description="Loading magazine">
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-gray-500 text-lg">Loading magazine...</p>
-        </div>
+      <Layout title="SoSHSA | Loading..." description="Loading magazine">
+        <section className="relative bg-white py-10 lg:py-15">
+          <MagazineDetailSkeleton />
+        </section>
       </Layout>
     );
   }
@@ -62,7 +75,7 @@ const MagazineDetailPage = () => {
   if (!magazine) {
     return (
       <Layout
-        title="Magazine Not Found | SoSHSA"
+        title="SoSHSA | Magazine Not Found "
         description="Magazine not found"
       >
         <div className="min-h-screen flex items-center justify-center">

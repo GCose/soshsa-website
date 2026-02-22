@@ -214,8 +214,15 @@ export interface Course {
     department: string;
     year: number;
     creditHours: number;
+    brochureUrl?: string;
     isActive: boolean;
     createdAt: string;
+    updatedAt: string;
+}
+
+export interface CoursesResponse {
+    data: Course[];
+    meta: { total: number };
 }
 
 export interface Resource {
