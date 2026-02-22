@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import useDebounce from "@/utils/debounce";
 
 interface Course {
   id: string;
@@ -52,19 +53,22 @@ const ResourcesPage = () => {
   const [yearFilter, setYearFilter] = useState<number | "all">("all");
   const limit = 15;
 
+  const debouncedCourseSearch = useDebounce(courseSearch, 500);
+
   const fetchCourses = async () => {
     const params: Record<string, string | number> = {
       page: coursePage - 1,
       limit,
       isActive: "true",
     };
-    if (courseSearch) params.search = courseSearch;
+
+    if (debouncedCourseSearch) params.search = debouncedCourseSearch;
     if (yearFilter !== "all") params.year = yearFilter;
 
     const { data } = await axios.get(`${BASE_URL}/courses`, { params });
     return data.data;
   };
-
+  
   const fetchCitationFiles = async (): Promise<CitationFile[]> => {
     const { data } = await axios.get(`${BASE_URL}/citation-files`);
     return data.data;
@@ -76,7 +80,7 @@ const ResourcesPage = () => {
   };
 
   const { data: coursesData, isLoading: loadingCourses } = useSWR(
-    ["courses-public", coursePage, courseSearch, yearFilter],
+    ["courses-public", coursePage, debouncedCourseSearch, yearFilter],
     fetchCourses,
     {
       revalidateOnFocus: false,
@@ -135,7 +139,7 @@ const ResourcesPage = () => {
       title="SoSHSA | Resources"
       description="Access course brochures, citation guides, and useful links"
     >
-      <section className="relative bg-white py-20 lg:py-32">
+      <section className="relative bg-white py-15 lg:py-15">
         <div className="w-full max-w-7xl mx-auto px-6 lg:px-8">
           <motion.div
             className="max-w-3xl mb-12"

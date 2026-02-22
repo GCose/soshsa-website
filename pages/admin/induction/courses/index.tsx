@@ -380,7 +380,7 @@ const CoursesPage = ({ adminData }: DashboardPageProps) => {
             columns={columns}
             data={courses}
             loading={isLoading}
-            emptyMessage="No courses found"
+            emptyMessage="No courses brochures found"
             pagination={{
               page,
               totalPages,

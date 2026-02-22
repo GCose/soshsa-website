@@ -6,15 +6,15 @@ const Footer = () => {
 
   const quickLinks = [
     { href: "/about", label: "About Us" },
-    { href: "/magazine", label: "Magazine" },
+    { href: "/magazines", label: "Magazine" },
     { href: "/events", label: "Events" },
     { href: "/induction", label: "Induction" },
   ];
 
   const resources = [
-    { href: "/resources/citation", label: "Citation Guide" },
+    { href: "/resources", label: "Course Brochures" },
     { href: "/news", label: "News" },
-    { href: "https://portal.utg.edu.gm", label: "UTG Portal", external: true },
+    { href: "https://utg.gm/login", label: "UTG Portal", external: true },
     { href: "https://utg.edu.gm", label: "UTG Website", external: true },
   ];
 

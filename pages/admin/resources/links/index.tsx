@@ -64,7 +64,7 @@ const ResourcesPage = () => {
     (resource) =>
       resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.category.toLowerCase().includes(searchQuery.toLowerCase())
+      resource.category.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleDelete = (id: string) => {
@@ -135,7 +135,7 @@ const ResourcesPage = () => {
   ];
 
   return (
-    <DashboardLayout pageTitle="Resources">
+    <DashboardLayout pageTitle="Useful Links">
       <div className="space-y-10">
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
           <SearchBar

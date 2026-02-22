@@ -4,6 +4,7 @@ import Input from "@/components/dashboard/ui/InputField";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
 import Image from "next/image";
+import Textarea from "@/components/dashboard/ui/TextArea";
 
 const AssociationIntroPage = () => {
   const [formData, setFormData] = useState({
@@ -52,17 +53,8 @@ const AssociationIntroPage = () => {
   };
 
   return (
-    <DashboardLayout pageTitle="Association Intro">
+    <DashboardLayout pageTitle="Induction Intro">
       <div className="space-y-10">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            SoSHSA Introduction
-          </h2>
-          <p className="text-gray-600 mt-1">
-            Manage the association welcome video and introductory content
-          </p>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
             <h3 className="text-lg font-bold text-gray-900">Video Content</h3>
@@ -76,6 +68,7 @@ const AssociationIntroPage = () => {
                 setFormData({ ...formData, videoUrl: e.target.value })
               }
               helperText="Enter the full YouTube video URL"
+              className="border-teal-100"
               required
             />
 
@@ -112,6 +105,7 @@ const AssociationIntroPage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
               }
+              className="border-teal-100"
               required
             />
 
@@ -120,14 +114,14 @@ const AssociationIntroPage = () => {
                 Description
                 <span className="text-red-500 ml-1">*</span>
               </label>
-              <textarea
+              <Textarea
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
                 rows={6}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                 placeholder="Write additional information about SoSHSA..."
+                className="border-teal-100"
                 required
               />
             </div>

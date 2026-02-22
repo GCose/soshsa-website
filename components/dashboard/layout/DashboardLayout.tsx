@@ -70,9 +70,9 @@ const DashboardLayout = ({
       title: "INDUCTION",
       items: [
         {
-          name: "Course Brochures",
-          href: "/admin/induction/courses",
-          icon: GraduationCap,
+          name: "Induction Intro",
+          href: "/admin/induction/intro",
+          icon: Video,
         },
         {
           name: "Portal Guide",
@@ -80,9 +80,9 @@ const DashboardLayout = ({
           icon: FileText,
         },
         {
-          name: "Association Intro",
-          href: "/admin/induction/intro",
-          icon: Video,
+          name: "Course Brochures",
+          href: "/admin/induction/courses",
+          icon: GraduationCap,
         },
       ],
     },
