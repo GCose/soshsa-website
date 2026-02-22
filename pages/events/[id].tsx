@@ -95,12 +95,12 @@ const EventDetailPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="relative aspect-video overflow-hidden rounded-lg mb-8">
+            <div className="relative w-full h-screen overflow-hidden mb-8">
               <Image
                 src={event.imageUrl}
                 alt={event.title}
                 fill
-                className="object-cover"
+                className="object-contain"
               />
             </div>
 
