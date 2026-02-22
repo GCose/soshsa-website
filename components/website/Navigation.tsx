@@ -13,11 +13,11 @@ const Navbar = () => {
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
-    { label: "Magazines", href: "/magazines" },
-    { label: "Events", href: "/events" },
-    { label: "News", href: "/news" },
     { label: "Induction", href: "/induction" },
     { label: "Resources", href: "/resources" },
+    { label: "Events", href: "/events" },
+    { label: "News", href: "/news" },
+    { label: "Magazines", href: "/magazines" },
     { label: "Contact", href: "/contact" },
   ];
 
