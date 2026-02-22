@@ -7,21 +7,47 @@ import { BASE_URL } from "@/utils/url";
 import { Executive } from "@/types/interface/dashboard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const fetchExecutives = async (): Promise<Executive[]> => {
+interface Council {
+  _id: string;
+  name: string;
+  isActive: boolean;
+}
+
+const fetchActiveCouncil = async (): Promise<Council | null> => {
+  const { data } = await axios.get(`${BASE_URL}/councils`, {
+    params: { isActive: true },
+  });
+  const councils = data.data.data;
+  return councils.length > 0 ? councils[0] : null;
+};
+
+const fetchExecutives = async (councilId: string): Promise<Executive[]> => {
   const { data } = await axios.get(`${BASE_URL}/executive-members`, {
-    params: { isServing: true },
+    params: { council: councilId, isServing: true },
   });
   return data.data.data;
 };
 
 const Executives = () => {
-  const { data: executives = [] } = useSWR(
-    "serving-executives",
-    fetchExecutives,
-  );
-  const councilName = executives[0]?.council?.name || "Executive Council";
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const { data: activeCouncil } = useSWR("active-council", fetchActiveCouncil, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    revalidateIfStale: false,
+  });
+
+  const { data: executives = [] } = useSWR(
+    activeCouncil ? ["council-executives", activeCouncil._id] : null,
+    () => fetchExecutives(activeCouncil!._id),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
+  );
+
+  const councilName = activeCouncil?.name || "Executive Council";
   const sortedExecutives = [...executives].reverse();
 
   const scroll = (direction: "left" | "right") => {
@@ -71,7 +97,7 @@ const Executives = () => {
     </motion.div>
   );
 
-  if (sortedExecutives.length === 0) {
+  if (!activeCouncil || sortedExecutives.length === 0) {
     return (
       <section className="relative bg-white py-16 md:py-24">
         <div className="w-full px-4 sm:px-6 lg:px-8">
@@ -80,7 +106,7 @@ const Executives = () => {
               No Executive Members
             </h1>
             <p className="text-gray-500 text-lg">
-              We currently have no serving executive members. Please check back
+              We currently have no active executive council. Please check back
               later.
             </p>
           </div>

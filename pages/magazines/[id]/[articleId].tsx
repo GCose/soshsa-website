@@ -2,8 +2,10 @@ import useSWR from "swr";
 import axios from "axios";
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { BASE_URL } from "@/utils/url";
 import Layout from "@/components/website/Layout";
 import NotFound from "@/components/website/NotFound";
@@ -34,6 +36,12 @@ const fetchArticle = async (
 const ArticleDetailPage = () => {
   const router = useRouter();
   const { id: magazineId, articleId } = router.query;
+  const [submitting, setSubmitting] = useState(false);
+  const [commentForm, setCommentForm] = useState({
+    fullName: "",
+    email: "",
+    comment: "",
+  });
 
   const { data: article, isLoading } = useSWR(
     magazineId && articleId ? `article-${articleId}` : null,
@@ -44,6 +52,27 @@ const ArticleDetailPage = () => {
       revalidateIfStale: false,
     },
   );
+
+  const handleCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      await axios.post(`${BASE_URL}/magazine-article-comments`, {
+        fullName: commentForm.fullName,
+        email: commentForm.email,
+        comment: commentForm.comment,
+        articleId: articleId,
+      });
+
+      toast.success("Comment submitted! It will be reviewed by our team.");
+      setCommentForm({ fullName: "", email: "", comment: "" });
+    } catch {
+      toast.error("Failed to submit comment. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -152,12 +181,87 @@ const ArticleDetailPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Comments</h2>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <p className="text-gray-600 text-center">
-                Comments feature coming soon! User authentication required.
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Leave a Comment
+            </h2>
+
+            <form
+              onSubmit={handleCommentSubmit}
+              className="max-w-2xl space-y-6"
+            >
+              <div>
+                <label
+                  htmlFor="fullName"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="fullName"
+                  value={commentForm.fullName}
+                  onChange={(e) =>
+                    setCommentForm({ ...commentForm, fullName: e.target.value })
+                  }
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  placeholder="Enter your full name"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={commentForm.email}
+                  onChange={(e) =>
+                    setCommentForm({ ...commentForm, email: e.target.value })
+                  }
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  placeholder="your.email@example.com"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="comment"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Comment <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="comment"
+                  rows={6}
+                  value={commentForm.comment}
+                  onChange={(e) =>
+                    setCommentForm({ ...commentForm, comment: e.target.value })
+                  }
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                  placeholder="Share your thoughts..."
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-8 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Submitting..." : "Submit Comment"}
+              </button>
+
+              <p className="text-sm text-gray-500">
+                Your comment will be reviewed by our team before being
+                published.
               </p>
-            </div>
+            </form>
           </motion.div>
         </div>
       </article>
