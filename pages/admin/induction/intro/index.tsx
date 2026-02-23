@@ -1,48 +1,195 @@
-import { useState } from "react";
+import useSWR from "swr";
+import Image from "next/image";
+import { NextApiRequest } from "next";
+import { Toaster, toast } from "sonner";
+import { isLoggedIn } from "@/utils/auth";
+import axios, { AxiosError } from "axios";
+import { useState, useEffect } from "react";
+import { getErrorMessage } from "@/utils/error";
 import { Save, Upload, Trash2 } from "lucide-react";
+import Button from "@/components/dashboard/ui/Button";
+import { BASE_URL, JEETIX_BASE_URL } from "@/utils/url";
 import Input from "@/components/dashboard/ui/InputField";
+import { CustomError, ErrorResponseData } from "@/types";
+import Textarea from "@/components/dashboard/ui/TextArea";
+import { DashboardPageProps } from "@/types/interface/dashboard";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
-import Image from "next/image";
-import Textarea from "@/components/dashboard/ui/TextArea";
 
-const AssociationIntroPage = () => {
+const InductionIntroPage = ({ adminData }: DashboardPageProps) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [introId, setIntroId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     videoUrl: "",
-    title: "Welcome to SoSHSA",
-    description:
-      "The Social Sciences and Humanities Students' Association is dedicated to promoting academic excellence and student welfare.",
+    title: "",
+    description: "",
+    isPublished: false,
   });
-  const [images, setImages] = useState<string[]>([]);
-  const [deleteModal, setDeleteModal] = useState<{
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [deleteImageModal, setDeleteImageModal] = useState<{
     isOpen: boolean;
-    imageIndex: number | null;
+    imageUrl: string | null;
   }>({
     isOpen: false,
-    imageIndex: null,
+    imageUrl: null,
   });
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { data: intros, mutate } = useSWR(
+    ["association-intros", adminData.token],
+    async () => {
+      const { data } = await axios.get(`${BASE_URL}/association-intros`, {
+        params: { page: 0, limit: 1 },
+        headers: { Authorization: `Bearer ${adminData.token}` },
+      });
+      return data.data.data;
+    },
+    {
+      revalidateOnFocus: false,
+      onError: (error) => {
+        const { message } = getErrorMessage(
+          error as AxiosError<ErrorResponseData> | CustomError | Error,
+        );
+        toast.error("Failed to load induction intro", {
+          description: message,
+          duration: 4000,
+        });
+      },
+    },
+  );
+
+  useEffect(() => {
+    if (intros && intros.length > 0) {
+      const intro = intros[0];
+      setIntroId(intro.id);
+      setFormData({
+        videoUrl: intro.videoUrl || "",
+        title: intro.title || "",
+        description: intro.description || "",
+        isPublished: intro.isPublished || false,
+      });
+      setExistingImages(intro.imageUrls || []);
+    }
+  }, [intros]);
+
+  const handleNewImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setNewImageFiles((prev) => [...prev, ...files]);
+
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImages((prev) => [...prev, reader.result as string]);
+        setImagePreviewUrls((prev) => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     });
   };
 
-  const handleDeleteImage = () => {
-    if (deleteModal.imageIndex !== null) {
-      setImages(images.filter((_, index) => index !== deleteModal.imageIndex));
+  const handleRemoveExistingImage = () => {
+    if (deleteImageModal.imageUrl) {
+      setExistingImages((prev) =>
+        prev.filter((url) => url !== deleteImageModal.imageUrl),
+      );
     }
-    setDeleteModal({ isOpen: false, imageIndex: null });
+    setDeleteImageModal({ isOpen: false, imageUrl: null });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleRemoveNewImage = (index: number) => {
+    setNewImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviewUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImagesToJeetix = async (files: File[]): Promise<string[]> => {
+    const uploadPromises = files.map(async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "soshsa/induction");
+
+      const { data } = await axios.post(
+        `${JEETIX_BASE_URL}/api/storage/upload`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+
+      return data.data.metadata.mediaLink;
+    });
+
+    return await Promise.all(uploadPromises);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Saving association intro:", { ...formData, images });
+    setSubmitting(true);
+
+    try {
+      let uploadedImageUrls: string[] = [];
+
+      if (newImageFiles.length > 0) {
+        setUploadingImages(true);
+        toast.loading("Uploading images...", { id: "upload-images" });
+        uploadedImageUrls = await uploadImagesToJeetix(newImageFiles);
+        toast.dismiss("upload-images");
+        setUploadingImages(false);
+      }
+
+      const allImageUrls = [...existingImages, ...uploadedImageUrls];
+
+      const payload = {
+        ...formData,
+        imageUrls: allImageUrls,
+      };
+
+      toast.loading(`${introId ? "Updating" : "Creating"} induction intro...`, {
+        id: "submit-toast",
+      });
+
+      if (introId) {
+        await axios.patch(
+          `${BASE_URL}/association-intros/${introId}`,
+          payload,
+          {
+            headers: { Authorization: `Bearer ${adminData.token}` },
+          },
+        );
+      } else {
+        const { data } = await axios.post(
+          `${BASE_URL}/association-intros`,
+          payload,
+          {
+            headers: { Authorization: `Bearer ${adminData.token}` },
+          },
+        );
+        setIntroId(data.data.id);
+      }
+
+      toast.dismiss("submit-toast");
+      toast.success(
+        `Induction intro ${introId ? "updated" : "created"} successfully`,
+      );
+
+      setNewImageFiles([]);
+      setImagePreviewUrls([]);
+      mutate();
+    } catch (error) {
+      toast.dismiss("upload-images");
+      toast.dismiss("submit-toast");
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error("Failed to save induction intro", {
+        description: message,
+        duration: 4000,
+      });
+    } finally {
+      setSubmitting(false);
+      setUploadingImages(false);
+    }
   };
 
   const getVideoId = (url: string) => {
@@ -53,10 +200,11 @@ const AssociationIntroPage = () => {
   };
 
   return (
-    <DashboardLayout pageTitle="Induction Intro">
-      <div className="space-y-10">
+    <>
+      <Toaster position="top-right" richColors />
+      <DashboardLayout pageTitle="Induction Intro" adminData={adminData}>
         <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
+          <div className="bg-teal-50 border-none rounded-lg p-6 space-y-6">
             <h3 className="text-lg font-bold text-gray-900">Video Content</h3>
 
             <Input
@@ -68,7 +216,6 @@ const AssociationIntroPage = () => {
                 setFormData({ ...formData, videoUrl: e.target.value })
               }
               helperText="Enter the full YouTube video URL"
-              className="border-teal-100"
               required
             />
 
@@ -92,7 +239,7 @@ const AssociationIntroPage = () => {
             )}
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
+          <div className="bg-teal-50 border-none rounded-lg p-6 space-y-6">
             <h3 className="text-lg font-bold text-gray-900">
               Supplementary Content
             </h3>
@@ -105,14 +252,12 @@ const AssociationIntroPage = () => {
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
               }
-              className="border-teal-100"
               required
             />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-                <span className="text-red-500 ml-1">*</span>
+                Description <span className="text-red-500">*</span>
               </label>
               <Textarea
                 value={formData.description}
@@ -120,93 +265,158 @@ const AssociationIntroPage = () => {
                   setFormData({ ...formData, description: e.target.value })
                 }
                 rows={6}
-                placeholder="Write additional information about SoSHSA..."
-                className="border-teal-100"
+                placeholder="Write additional information about the association..."
                 required
               />
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  Additional Images
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  Upload images to accompany the introduction
-                </p>
-              </div>
+          <div className="bg-teal-50 border-none rounded-lg p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900">
+                Supporting Images
+              </h3>
               <div>
                 <input
                   type="file"
                   accept="image/*"
                   multiple
-                  onChange={handleImageUpload}
+                  onChange={handleNewImageUpload}
                   className="hidden"
-                  id="image-upload"
+                  id="images-upload"
                 />
                 <label
-                  htmlFor="image-upload"
-                  className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  htmlFor="images-upload"
+                  className="cursor-pointer inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
                 >
                   <Upload size={16} />
-                  Upload Images
+                  Add Images
                 </label>
               </div>
             </div>
 
-            {images.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {images.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <Image
-                      src={image}
-                      alt={`Upload ${index + 1}`}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setDeleteModal({ isOpen: true, imageIndex: index })
-                      }
-                      className="cursor-pointer absolute top-2 right-2 bg-red-600 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <p className="text-gray-600">No images uploaded yet</p>
-              </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {existingImages.map((imageUrl, index) => (
+                <div
+                  key={`existing-${index}`}
+                  className="relative aspect-video rounded-lg overflow-hidden bg-gray-100 group"
+                >
+                  <Image
+                    src={imageUrl}
+                    alt={`Image ${index + 1}`}
+                    fill
+                    className="object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDeleteImageModal({ isOpen: true, imageUrl })
+                    }
+                    className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+
+              {imagePreviewUrls.map((previewUrl, index) => (
+                <div
+                  key={`new-${index}`}
+                  className="relative aspect-video rounded-lg overflow-hidden bg-gray-100 group"
+                >
+                  <Image
+                    src={previewUrl}
+                    alt={`New image ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveNewImage(index)}
+                    className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {existingImages.length === 0 && imagePreviewUrls.length === 0 && (
+              <p className="text-center text-gray-500 py-8">
+                No images added yet. Click {'"'}Add Images{'"'} to upload.
+              </p>
             )}
           </div>
 
+          <div className="bg-teal-50 border-none rounded-lg p-6">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="isPublished"
+                checked={formData.isPublished}
+                onChange={(e) =>
+                  setFormData({ ...formData, isPublished: e.target.checked })
+                }
+                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+              />
+              <label
+                htmlFor="isPublished"
+                className="text-sm font-medium text-gray-700"
+              >
+                Publish to website (Make visible to students)
+              </label>
+            </div>
+          </div>
+
           <div className="flex justify-end">
-            <button
+            <Button
               type="submit"
-              className="cursor-pointer flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              variant="primary"
+              leftIcon={<Save size={20} />}
+              disabled={submitting || uploadingImages}
+              isLoading={submitting || uploadingImages}
             >
-              <Save size={18} />
-              Save Changes
-            </button>
+              {uploadingImages
+                ? "Uploading Images..."
+                : submitting
+                  ? "Saving..."
+                  : introId
+                    ? "Update Intro"
+                    : "Create Intro"}
+            </Button>
           </div>
         </form>
-      </div>
 
-      <ConfirmationModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, imageIndex: null })}
-        onConfirm={handleDeleteImage}
-        title="Delete Image"
-        message="Are you sure you want to remove this image?"
-        confirmText="Delete"
-        type="danger"
-      />
-    </DashboardLayout>
+        <ConfirmationModal
+          isOpen={deleteImageModal.isOpen}
+          onClose={() => setDeleteImageModal({ isOpen: false, imageUrl: null })}
+          onConfirm={handleRemoveExistingImage}
+          title="Remove Image"
+          message="Are you sure you want to remove this image?"
+          confirmText="Remove"
+          type="danger"
+        />
+      </DashboardLayout>
+    </>
   );
 };
 
-export default AssociationIntroPage;
+export const getServerSideProps = async ({ req }: { req: NextApiRequest }) => {
+  const adminData = isLoggedIn(req);
+
+  if (!adminData) {
+    return {
+      redirect: {
+        destination: "/admin/auth/sign-in",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: { adminData },
+  };
+};
+
+export default InductionIntroPage;

@@ -10,13 +10,15 @@ interface AssociationIntro {
   videoUrl: string;
   title: string;
   description: string;
-  images: string[];
+  imageUrls: string[];
   isPublished: boolean;
 }
 
 const fetchAssociationIntro = async (): Promise<AssociationIntro | null> => {
-  const { data } = await axios.get(`${BASE_URL}/association-intro`);
-  return data.data;
+  const { data } = await axios.get(`${BASE_URL}/association-intros`, {
+    params: { isPublished: "true", limit: 1 },
+  });
+  return data.data.data[0] || null;
 };
 
 const getVideoId = (url: string): string | null => {
@@ -56,7 +58,7 @@ const InductionPage = () => {
     );
   }
 
-  if (!intro || !intro.isPublished) {
+  if (!intro) {
     return (
       <Layout title="SoSHSA | Induction" description="Welcome to SoSHSA">
         <section className="relative bg-white py-10 lg:py-15">
@@ -78,7 +80,7 @@ const InductionPage = () => {
   return (
     <Layout title={`SoSHSA | ${intro.title}`} description={intro.description}>
       <section className="relative bg-white py-10 lg:py-15">
-        <div className="w-full max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="w-full mx-auto px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -92,7 +94,7 @@ const InductionPage = () => {
             </h1>
 
             {videoId && (
-              <div className="aspect-video rounded-lg overflow-hidden bg-gray-900 mb-12 shadow-xl">
+              <div className="aspect-video overflow-hidden bg-gray-900 mb-12">
                 <iframe
                   width="100%"
                   height="100%"
@@ -112,9 +114,9 @@ const InductionPage = () => {
               </p>
             </div>
 
-            {intro.images && intro.images.length > 0 && (
+            {intro.imageUrls && intro.imageUrls.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {intro.images.map((imageUrl, index) => (
+                {intro.imageUrls.map((imageUrl, index) => (
                   <motion.div
                     key={index}
                     className="relative aspect-video rounded-lg overflow-hidden bg-gray-200"
