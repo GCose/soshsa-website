@@ -14,6 +14,7 @@ const Navbar = () => {
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
     { label: "Induction", href: "/induction" },
+    { label: "Portal Guide", href: "/portal-guide" },
     { label: "Resources", href: "/resources" },
     { label: "Events", href: "/events" },
     { label: "News", href: "/news" },
@@ -48,12 +49,12 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 bg-black backdrop-blur-sm border-b border-white/20 transition-transform duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 bg-black transition-transform duration-300 ${
         hidden ? "-translate-y-full" : "translate-y-0"
       }`}
     >
       <div className="mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-15">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-12 h-12 rounded-full overflow-hidden transition-transform group-hover:scale-105">
               <Image

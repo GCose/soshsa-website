@@ -17,7 +17,7 @@ const Layout = ({ children, title, description }: LayoutProps) => (
     </Head>
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 mt-15">{children}</main>
       <Footer />
     </div>
   </>

@@ -194,7 +194,7 @@ const ResourcesPage = () => {
         description="Access course brochures, citation guides, and useful links"
       >
         <section className="relative bg-white py-15 lg:py-15">
-          <div className="w-full max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="w-full mx-auto px-6 lg:px-8">
             <motion.div
               className="max-w-3xl mb-12"
               initial={{ opacity: 0, y: 20 }}
@@ -461,7 +461,7 @@ const ResourcesPage = () => {
             {activeTab === "links" && (
               <div>
                 {loadingLinks ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[...Array(4)].map((_, i) => (
                       <div
                         key={i}
@@ -478,7 +478,7 @@ const ResourcesPage = () => {
                     No useful links available at the moment.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {usefulLinks.map((link, index) => (
                       <motion.div
                         key={link.id}
