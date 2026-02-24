@@ -197,14 +197,23 @@ export interface ArticlesResponse {
     meta: { total: number };
 }
 
-export interface Comment {
+export interface MagazineComment {
     id: string;
-    author: string;
+    fullName: string;
     email: string;
-    content: string;
+    comment: string;
+    articleId: string;
     articleTitle: string;
     isApproved: boolean;
     createdAt: string;
+    updatedAt: string;
+}
+
+export interface CommentsResponse {
+    data: MagazineComment[];
+    meta: {
+        total: number;
+    };
 }
 
 export interface Course {
@@ -274,9 +283,16 @@ export interface AssociationIntro {
     videoUrl: string;
     title: string;
     description: string;
-    images: string[];
+    imageUrls: string[];
     isPublished: boolean;
-    updatedAt: string;
+    createdAt: string;
+}
+
+export interface IntrosResponse {
+    data: AssociationIntro[];
+    meta: {
+        total: number;
+    };
 }
 
 export interface CitationFile {
@@ -291,19 +307,6 @@ export interface CitationFile {
     downloads: number;
     createdAt: string;
 }
-
-export interface SiteSettings {
-    id: string;
-    officialEmail: string;
-    facebookUrl: string;
-    instagramUrl: string;
-    twitterUrl: string;
-    whatsappUrl: string;
-    physicalAddress: string;
-    officeHours: string;
-    updatedAt: string;
-}
-
 export interface InboxMessage {
     id: string;
     fullName: string;

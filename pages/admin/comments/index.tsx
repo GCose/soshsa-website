@@ -1,49 +1,29 @@
-import { useState, useCallback } from "react";
 import useSWR from "swr";
-import axios, { AxiosError } from "axios";
 import { NextApiRequest } from "next";
-import { Toaster, toast } from "sonner";
-import { Check, X } from "lucide-react";
-import { isLoggedIn } from "@/utils/auth";
-import { getErrorMessage } from "@/utils/error";
 import { BASE_URL } from "@/utils/url";
+import { Toaster, toast } from "sonner";
+import axios, { AxiosError } from "axios";
+import { isLoggedIn } from "@/utils/auth";
+import useDebounce from "@/utils/debounce";
+import { Check, Trash2 } from "lucide-react";
+import { useState, useCallback } from "react";
+import { getErrorMessage } from "@/utils/error";
 import { renderApprovedBadge } from "@/utils/badge";
-import { CustomError, ErrorResponseData } from "@/types";
-import { TableColumn, DashboardPageProps } from "@/types/interface/dashboard";
 import Table from "@/components/dashboard/ui/Table";
 import Sheet from "@/components/dashboard/ui/Sheet";
 import Button from "@/components/dashboard/ui/Button";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
+import { CommentFilterStatus, CustomError, ErrorResponseData } from "@/types";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
-import useDebounce from "@/utils/debounce";
-
-interface MagazineComment {
-  id: string;
-  fullName: string;
-  email: string;
-  comment: string;
-  articleId: string;
-  articleTitle: string;
-  isApproved: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface CommentsResponse {
-  data: MagazineComment[];
-  meta: {
-    total: number;
-  };
-}
-
-type FilterStatus = "all" | "pending" | "approved";
+import { TableColumn, DashboardPageProps, CommentsResponse, MagazineComment } from "@/types/interface/dashboard";
 
 const CommentsPage = ({ adminData }: DashboardPageProps) => {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 500);
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("pending");
+  const [filterStatus, setFilterStatus] =
+    useState<CommentFilterStatus>("pending");
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [viewingComment, setViewingComment] = useState<MagazineComment | null>(
     null,
@@ -206,10 +186,10 @@ const CommentsPage = ({ adminData }: DashboardPageProps) => {
               e.stopPropagation();
               setDeleteModal({ isOpen: true, id: row.id });
             }}
-            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+            className="cursor-pointer hover:rounded-full p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
-            <X size={16} />
+            <Trash2 size={16} />
           </button>
         </div>
       ),

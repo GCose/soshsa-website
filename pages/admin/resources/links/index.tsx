@@ -1,50 +1,60 @@
-import { useState } from "react";
-// import { useRouter } from "next/router";
-// import { GetServerSideProps } from "next";
-import { renderTypeBadge } from "@/utils/badge";
+import useSWR from "swr";
+import { NextApiRequest } from "next";
+import { Toaster, toast } from "sonner";
+import { isLoggedIn } from "@/utils/auth";
+import axios, { AxiosError } from "axios";
+import useDebounce from "@/utils/debounce";
+import { useState, useCallback } from "react";
+import { getErrorMessage } from "@/utils/error";
+import Sheet from "@/components/dashboard/ui/Sheet";
 import Table from "@/components/dashboard/ui/Table";
+import Button from "@/components/dashboard/ui/Button";
+import { BASE_URL, JEETIX_BASE_URL } from "@/utils/url";
 import Input from "@/components/dashboard/ui/InputField";
-import Modal from "@/components/dashboard/ui/modals/Modal";
+import { CustomError, ErrorResponseData } from "@/types";
+import Textarea from "@/components/dashboard/ui/TextArea";
+import { Plus, Edit, Trash2, Upload } from "lucide-react";
 import SearchBar from "@/components/dashboard/ui/SearchBar";
-import { Plus, Edit, Trash2, ExternalLink } from "lucide-react";
-import { Resource, TableColumn } from "@/types/interface/dashboard";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
+import { TableColumn, DashboardPageProps } from "@/types/interface/dashboard";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
 
-const mockResources: Resource[] = [
-  {
-    id: "1",
-    title: "UTG Student Portal",
-    description: "Access your academic records, grades, and registration",
-    url: "https://portal.utg.edu.gm",
-    category: "Academic",
-    order: 1,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    title: "UTG Library",
-    description: "Browse digital resources and research materials",
-    url: "https://library.utg.edu.gm",
-    category: "Academic",
-    order: 2,
-    createdAt: "2024-01-14",
-  },
-  {
-    id: "3",
-    title: "APA Citation Guide",
-    description: "Learn proper citation formatting for academic writing",
-    url: "https://apastyle.apa.org",
-    category: "Resources",
-    order: 3,
-    createdAt: "2024-01-13",
-  },
-];
+interface UsefulLink {
+  id: string;
+  title: string;
+  url: string;
+  description: string;
+  fileUrl?: string;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-const ResourcesPage = () => {
-  //   const router = useRouter();
+interface LinksResponse {
+  data: UsefulLink[];
+  meta: {
+    total: number;
+  };
+}
+
+const UsefulLinksPage = ({ adminData }: DashboardPageProps) => {
+  const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [resources, setResources] = useState(mockResources);
+  const debouncedSearch = useDebounce(searchQuery, 500);
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
+  const [viewingLink, setViewingLink] = useState<UsefulLink | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [editingLink, setEditingLink] = useState<UsefulLink | null>(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    url: "",
+    description: "",
+    category: "",
+    fileUrl: "",
+  });
+  const [file, setFile] = useState<File | null>(null);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     id: string | null;
@@ -52,79 +62,251 @@ const ResourcesPage = () => {
     isOpen: false,
     id: null,
   });
-  const [editModal, setEditModal] = useState<{
-    isOpen: boolean;
-    resource: Resource | null;
-  }>({
-    isOpen: false,
-    resource: null,
-  });
+  const limit = 15;
 
-  const filteredResources = resources.filter(
-    (resource) =>
-      resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.category.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const fetchLinks = async (): Promise<LinksResponse> => {
+    const params: Record<string, string | number> = {
+      page: page - 1,
+      limit,
+    };
+    if (debouncedSearch) params.search = debouncedSearch;
 
-  const handleDelete = (id: string) => {
-    setResources(resources.filter((resource) => resource.id !== id));
+    const { data } = await axios.get(`${BASE_URL}/useful-links`, {
+      params,
+    });
+    return data.data;
   };
 
-  const columns: TableColumn<Resource>[] = [
+  const { data, mutate, isLoading } = useSWR(
+    ["useful-links", page, debouncedSearch],
+    fetchLinks,
+    {
+      revalidateOnFocus: false,
+      onError: (error) => {
+        const { message } = getErrorMessage(
+          error as AxiosError<ErrorResponseData> | CustomError | Error,
+        );
+        toast.error("Failed to load useful links", {
+          description: message,
+          duration: 4000,
+        });
+      },
+    },
+  );
+
+  const links = data?.data ?? [];
+  const totalPages = data ? Math.ceil(data.meta.total / limit) : 0;
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  }, []);
+
+  const handleView = (link: UsefulLink) => {
+    setViewingLink(link);
+    setViewSheetOpen(true);
+  };
+
+  const handleOpenSheet = (link?: UsefulLink) => {
+    if (link) {
+      setEditingLink(link);
+      setFormData({
+        title: link.title,
+        url: link.url,
+        description: link.description,
+        category: link.category,
+        fileUrl: link.fileUrl || "",
+      });
+    } else {
+      setEditingLink(null);
+      setFormData({
+        title: "",
+        url: "",
+        description: "",
+        category: "",
+        fileUrl: "",
+      });
+    }
+    setFile(null);
+    setSheetOpen(true);
+  };
+
+  const handleCloseSheet = () => {
+    setSheetOpen(false);
+    setEditingLink(null);
+    setFile(null);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+    }
+  };
+
+  const uploadFileToJeetix = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "soshsa/links");
+
+    const { data } = await axios.post(
+      `${JEETIX_BASE_URL}/api/storage/upload`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+
+    return data.data.metadata.mediaLink;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      let fileUrl = formData.fileUrl;
+
+      if (file) {
+        setUploadingFile(true);
+        toast.loading("Uploading file...", { id: "upload-toast" });
+        fileUrl = await uploadFileToJeetix(file);
+        toast.dismiss("upload-toast");
+        setUploadingFile(false);
+      }
+
+      const payload = {
+        title: formData.title,
+        url: formData.url,
+        description: formData.description,
+        category: formData.category,
+        fileUrl: fileUrl || undefined,
+      };
+
+      toast.loading(`${editingLink ? "Updating" : "Creating"} useful link...`, {
+        id: "submit-toast",
+      });
+
+      if (editingLink) {
+        await axios.patch(
+          `${BASE_URL}/useful-links/${editingLink.id}`,
+          payload,
+          {
+            headers: { Authorization: `Bearer ${adminData.token}` },
+          },
+        );
+      } else {
+        await axios.post(`${BASE_URL}/useful-links`, payload, {
+          headers: { Authorization: `Bearer ${adminData.token}` },
+        });
+      }
+
+      toast.dismiss("submit-toast");
+      toast.success(
+        `Useful link ${editingLink ? "updated" : "created"} successfully`,
+      );
+
+      mutate();
+      handleCloseSheet();
+    } catch (error) {
+      toast.dismiss("upload-toast");
+      toast.dismiss("submit-toast");
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error("Failed to save useful link", {
+        description: message,
+        duration: 4000,
+      });
+    } finally {
+      setSubmitting(false);
+      setUploadingFile(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      toast.loading("Deleting useful link...", { id: "delete-toast" });
+      await axios.delete(`${BASE_URL}/useful-links/${id}`, {
+        headers: { Authorization: `Bearer ${adminData.token}` },
+      });
+      toast.dismiss("delete-toast");
+      toast.success("Useful link deleted successfully");
+      mutate();
+      setDeleteModal({ isOpen: false, id: null });
+    } catch (error) {
+      toast.dismiss("delete-toast");
+      const { message } = getErrorMessage(
+        error as AxiosError<ErrorResponseData> | CustomError | Error,
+      );
+      toast.error("Failed to delete useful link", {
+        description: message,
+        duration: 4000,
+      });
+    }
+  };
+
+  const columns: TableColumn<UsefulLink>[] = [
     {
       key: "title",
       label: "Title",
-      render: (value: string | boolean | number) => (
-        <span className="font-medium text-gray-900">{value}</span>
-      ),
+      render: (value) => <span>{value as string}</span>,
     },
     {
-      key: "description",
-      label: "Description",
-      render: (value: string | boolean | number) => (
-        <span className="text-gray-700 truncate max-w-xs block">{value}</span>
+      key: "url",
+      label: "URL",
+      render: (value) => (
+        <a
+          href={value as string}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-primary hover:underline truncate max-w-xs block"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {value as string}
+        </a>
       ),
     },
     {
       key: "category",
       label: "Category",
-      render: (value: string | boolean | number) =>
-        renderTypeBadge(value as string),
+      render: (value) => (
+        <span className="inline-flex px-2.5 py-1 text-xs font-medium rounded bg-purple-100 text-purple-700">
+          {value as string}
+        </span>
+      ),
     },
     {
-      key: "url",
-      label: "URL",
-      render: (value: string | boolean | number) => (
-        <a
-          href={value as string}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-primary hover:text-primary/80 cursor-pointer"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span className="text-sm truncate max-w-[200px]">{value}</span>
-          <ExternalLink size={12} />
-        </a>
-      ),
+      key: "createdAt",
+      label: "Created",
+      render: (value) =>
+        new Date(value as string).toLocaleDateString("en-GB", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        }),
     },
     {
       key: "id",
       label: "Actions",
-      render: (value: string | boolean | number, row) => (
+      render: (_value, row) => (
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setEditModal({ isOpen: true, resource: row })}
-            className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenSheet(row);
+            }}
+            className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
             title="Edit"
           >
             <Edit size={16} />
           </button>
           <button
-            onClick={() =>
-              setDeleteModal({ isOpen: true, id: value as string })
-            }
-            className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDeleteModal({ isOpen: true, id: row.id });
+            }}
+            className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
             title="Delete"
           >
             <Trash2 size={16} />
@@ -135,117 +317,261 @@ const ResourcesPage = () => {
   ];
 
   return (
-    <DashboardLayout pageTitle="Useful Links">
-      <div className="space-y-10">
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-          <SearchBar
-            className="max-w-md"
-            onSearch={setSearchQuery}
-            placeholder="Search resources..."
+    <>
+      <Toaster position="top-right" richColors />
+      <DashboardLayout pageTitle="Useful Links" adminData={adminData}>
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <SearchBar
+              className="max-w-md"
+              onSearch={handleSearch}
+              placeholder="Search useful links..."
+            />
+            <Button
+              variant="primary"
+              onClick={() => handleOpenSheet()}
+              leftIcon={<Plus size={20} />}
+            >
+              Add Link
+            </Button>
+          </div>
+
+          <Table
+            columns={columns}
+            data={links}
+            loading={isLoading}
+            emptyMessage="No useful links found"
+            onRowClick={handleView}
+            pagination={{
+              page,
+              totalPages,
+              total: data?.meta.total,
+              onPageChange: setPage,
+            }}
           />
-          <button
-            onClick={() => setEditModal({ isOpen: true, resource: null })}
-            className="cursor-pointer flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus size={20} />
-            Add Resource
-          </button>
         </div>
 
-        <Table
-          columns={columns}
-          data={filteredResources}
-          emptyMessage="No resources found"
-        />
-      </div>
+        <Sheet
+          title="Link Details"
+          isOpen={viewSheetOpen}
+          onClose={() => setViewSheetOpen(false)}
+        >
+          {viewingLink && (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Title
+                  </label>
+                  <p className="text-gray-900 font-medium text-lg">
+                    {viewingLink.title}
+                  </p>
+                </div>
 
-      <ConfirmationModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, id: null })}
-        onConfirm={() => deleteModal.id && handleDelete(deleteModal.id)}
-        title="Delete Resource"
-        message="Are you sure you want to delete this resource? This action cannot be undone."
-        confirmText="Delete"
-        type="danger"
-      />
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    URL
+                  </label>
+                  <a
+                    href={viewingLink.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline break-all"
+                  >
+                    {viewingLink.url}
+                  </a>
+                </div>
 
-      <Modal
-        isOpen={editModal.isOpen}
-        onClose={() => setEditModal({ isOpen: false, resource: null })}
-        title={editModal.resource ? "Edit Resource" : "Add Resource"}
-        size="md"
-      >
-        <form className="space-y-4">
-          <Input
-            label="Title"
-            type="text"
-            placeholder="Resource title"
-            defaultValue={editModal.resource?.title || ""}
-            required
-          />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-              <span className="text-red-500 ml-1">*</span>
-            </label>
-            <textarea
-              defaultValue={editModal.resource?.description || ""}
-              rows={3}
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-              placeholder="Brief description"
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Description
+                  </label>
+                  <p className="text-gray-900 whitespace-pre-wrap">
+                    {viewingLink.description}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Category
+                  </label>
+                  <p className="text-gray-900">{viewingLink.category}</p>
+                </div>
+
+                {viewingLink.fileUrl && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                      Attached File
+                    </label>
+                    <a
+                      href={viewingLink.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      View File
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={() => {
+                    setViewSheetOpen(false);
+                    handleOpenSheet(viewingLink);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setViewSheetOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </Sheet>
+
+        <Sheet
+          size="lg"
+          isOpen={sheetOpen}
+          onClose={handleCloseSheet}
+          title={editingLink ? "Edit Link" : "Add Link"}
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
+              label="Title"
+              type="text"
+              placeholder="e.g., UTG Library Portal"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
               required
             />
-          </div>
-          <Input
-            label="URL"
-            type="url"
-            placeholder="https://example.com"
-            defaultValue={editModal.resource?.url || ""}
-            required
-          />
-          <Input
-            label="Category"
-            type="text"
-            placeholder="e.g., Academic, Resources, Tools"
-            defaultValue={editModal.resource?.category || ""}
-            required
-          />
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              className="cursor-pointer flex-1 bg-primary text-white py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            >
-              {editModal.resource ? "Update" : "Add"} Resource
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditModal({ isOpen: false, resource: null })}
-              className="cursor-pointer px-6 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Modal>
-    </DashboardLayout>
+
+            <Input
+              label="URL"
+              type="url"
+              placeholder="https://example.com"
+              value={formData.url}
+              onChange={(e) =>
+                setFormData({ ...formData, url: e.target.value })
+              }
+              required
+            />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                rows={4}
+                placeholder="Describe this link..."
+                required
+              />
+            </div>
+
+            <Input
+              label="Category"
+              type="text"
+              placeholder="e.g., Library, Research, Portal"
+              value={formData.category}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
+              required
+            />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Attached File (Optional)
+              </label>
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="hidden"
+                id="file-upload"
+                accept=".pdf,.docx"
+              />
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Upload size={16} />
+                {file
+                  ? file.name
+                  : editingLink && formData.fileUrl
+                    ? "Change File"
+                    : "Upload File"}
+              </label>
+              <p className="text-xs text-gray-500 mt-2">
+                Optional: Attach a PDF or DOCX file (e.g., guide, manual)
+              </p>
+            </div>
+
+            <div className="flex gap-4 pt-4 border-t border-gray-200">
+              <Button
+                type="submit"
+                variant="primary"
+                className="flex-1"
+                isLoading={submitting || uploadingFile}
+              >
+                {uploadingFile
+                  ? "Uploading..."
+                  : editingLink
+                    ? "Update Link"
+                    : "Add Link"}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleCloseSheet}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Sheet>
+
+        <ConfirmationModal
+          isOpen={deleteModal.isOpen}
+          onClose={() => setDeleteModal({ isOpen: false, id: null })}
+          onConfirm={() => deleteModal.id && handleDelete(deleteModal.id)}
+          title="Delete Link"
+          message="Are you sure you want to delete this link? This action cannot be undone."
+          confirmText="Delete"
+          type="danger"
+        />
+      </DashboardLayout>
+    </>
   );
 };
 
-// export const getServerSideProps: GetServerSideProps = async (context) => {
-//   const token = context.req.cookies.token || null;
+export const getServerSideProps = async ({ req }: { req: NextApiRequest }) => {
+  const adminData = isLoggedIn(req);
 
-//   if (!token) {
-//     return {
-//       redirect: {
-//         destination: "/admin/auth/sign-in",
-//         permanent: false,
-//       },
-//     };
-//   }
+  if (!adminData) {
+    return {
+      redirect: {
+        destination: "/admin/auth/sign-in",
+        permanent: false,
+      },
+    };
+  }
 
-//   return {
-//     props: {},
-//   };
-// };
+  return {
+    props: { adminData },
+  };
+};
 
-export default ResourcesPage;
+export default UsefulLinksPage;

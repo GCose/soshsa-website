@@ -17,6 +17,7 @@ import { isLoggedIn } from "@/utils/auth";
 import axios, { AxiosError } from "axios";
 import { useState, useCallback } from "react";
 import { getErrorMessage } from "@/utils/error";
+import { renderStatusBadge } from "@/utils/badge";
 import Sheet from "@/components/dashboard/ui/Sheet";
 import Table from "@/components/dashboard/ui/Table";
 import Button from "@/components/dashboard/ui/Button";
@@ -33,6 +34,8 @@ const CoursesPage = ({ adminData }: DashboardPageProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterYear, setFilterYear] = useState<FilterYear>("all");
   const [filterStatus, setFilterStatus] = useState<CourseFilterStatus>("all");
+  const [viewSheetOpen, setViewSheetOpen] = useState(false);
+  const [viewingCourse, setViewingCourse] = useState<Course | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [formData, setFormData] = useState({
@@ -93,6 +96,11 @@ const CoursesPage = ({ adminData }: DashboardPageProps) => {
     setSearchQuery(query);
     setPage(1);
   }, []);
+
+  const handleView = (course: Course) => {
+    setViewingCourse(course);
+    setViewSheetOpen(true);
+  };
 
   const handleOpenSheet = (course?: Course) => {
     if (course) {
@@ -231,27 +239,11 @@ const CoursesPage = ({ adminData }: DashboardPageProps) => {
     }
   };
 
-  const renderStatusBadge = (isActive: boolean) => {
-    return (
-      <span
-        className={`inline-flex px-2.5 py-1 text-xs font-medium rounded border ${
-          isActive
-            ? "bg-green-100 text-green-700 border-green-300"
-            : "bg-gray-100 text-gray-700 border-gray-300"
-        }`}
-      >
-        {isActive ? "Active" : "Inactive"}
-      </span>
-    );
-  };
-
   const columns: TableColumn<Course>[] = [
     {
       key: "code",
       label: "Code",
-      render: (value) => (
-        <span className="font-medium text-gray-900">{value as string}</span>
-      ),
+      render: (value) => <span>{value as string}</span>,
     },
     {
       key: "title",
@@ -285,7 +277,7 @@ const CoursesPage = ({ adminData }: DashboardPageProps) => {
               e.stopPropagation();
               handleOpenSheet(row);
             }}
-            className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+            className="cursor-pointer p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
             title="Edit"
           >
             <Edit size={16} />
@@ -295,7 +287,7 @@ const CoursesPage = ({ adminData }: DashboardPageProps) => {
               e.stopPropagation();
               setDeleteModal({ isOpen: true, id: row.id });
             }}
-            className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+            className="cursor-pointer p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
             title="Delete"
           >
             <Trash2 size={16} />
@@ -381,6 +373,7 @@ const CoursesPage = ({ adminData }: DashboardPageProps) => {
             data={courses}
             loading={isLoading}
             emptyMessage="No courses brochures found"
+            onRowClick={handleView}
             pagination={{
               page,
               totalPages,
@@ -389,6 +382,101 @@ const CoursesPage = ({ adminData }: DashboardPageProps) => {
             }}
           />
         </div>
+
+        <Sheet
+          isOpen={viewSheetOpen}
+          onClose={() => setViewSheetOpen(false)}
+          title="Course Details"
+        >
+          {viewingCourse && (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Course Code
+                  </label>
+                  <p className="text-gray-900 font-medium text-lg">
+                    {viewingCourse.code}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Course Title
+                  </label>
+                  <p className="text-gray-900 font-medium">
+                    {viewingCourse.title}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Department
+                  </label>
+                  <p className="text-gray-900">{viewingCourse.department}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                      Year
+                    </label>
+                    <p className="text-gray-900">Year {viewingCourse.year}</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                      Credit Hours
+                    </label>
+                    <p className="text-gray-900">{viewingCourse.creditHours}</p>
+                  </div>
+                </div>
+
+                {viewingCourse.brochureUrl && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">
+                      Course Brochure
+                    </label>
+                    <a
+                      href={viewingCourse.brochureUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      View Brochure (PDF)
+                    </a>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Status
+                  </label>
+                  {renderStatusBadge(viewingCourse.isActive)}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <Button
+                  variant="primary"
+                  className="flex-1"
+                  onClick={() => {
+                    setViewSheetOpen(false);
+                    handleOpenSheet(viewingCourse);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setViewSheetOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </Sheet>
 
         <Sheet
           isOpen={sheetOpen}
