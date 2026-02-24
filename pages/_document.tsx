@@ -1,18 +1,26 @@
-import { Html, Head, Main, NextScript } from "next/document"
+import { Html, Head, Main, NextScript } from "next/document";
 
 const Document = () => (
   <Html lang="en">
     <Head>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossOrigin="anonymous"
+      />
       <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       />
-        <link rel="icon" href="/images/logo.jpeg" />
+      <link rel="icon" href="/images/logo.jpeg" />
       <meta
         name="description"
         content="Social Sciences and Humanities Students' Association - University of The Gambia"
+      />
+      <meta
+        name="google-site-verification"
+        content="cYtk4C3rxSxsbweqGDktZcyXjEQLFbmShStbGJPmq44"
       />
     </Head>
     <body>
@@ -20,6 +28,6 @@ const Document = () => (
       <NextScript />
     </body>
   </Html>
-)
+);
 
-export default Document
+export default Document;
