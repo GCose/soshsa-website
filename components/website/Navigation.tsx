@@ -25,7 +25,7 @@ const Navbar = () => {
     const onScroll = () => {
       const currentScrollY = window.scrollY;
 
-      if (currentScrollY > lastScrollY.current && currentScrollY > 1) {
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
         setHidden(true);
       } else {
         setHidden(false);
@@ -48,10 +48,9 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`sticky top-0 z-50 bg-black backdrop-blur-sm border-b border-white
-  transition-transform duration-300 ${
-    hidden ? "-translate-y-full" : "translate-y-0"
-  }`}
+      className={`fixed top-0 left-0 right-0 z-50 bg-black backdrop-blur-sm border-b border-white/20 transition-transform duration-300 ${
+        hidden ? "-translate-y-full" : "translate-y-0"
+      }`}
     >
       <div className="mx-auto px-4">
         <div className="flex items-center justify-between h-20">
@@ -114,8 +113,14 @@ const Navbar = () => {
           </button>
         </div>
 
-        {isOpen && (
-          <div className="lg:hidden py-6 border-t border-white/20">
+        <div
+          className={`lg:hidden absolute top-full left-0 right-0 bg-black border-t border-white/20 transition-all duration-300 ${
+            isOpen
+              ? "opacity-100 translate-y-0 visible"
+              : "opacity-0 -translate-y-4 invisible"
+          }`}
+        >
+          <div className="px-4 py-6">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -131,7 +136,7 @@ const Navbar = () => {
               </Link>
             ))}
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );
