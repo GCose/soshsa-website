@@ -1,10 +1,10 @@
 import useSWR from "swr";
 import axios from "axios";
-import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { BASE_URL } from "@/utils/url";
 import Layout from "@/components/website/Layout";
+import Link from "next/link";
 
 interface PortalGuideSection {
   id: string;
@@ -15,7 +15,7 @@ interface PortalGuideSection {
 }
 
 const fetchSections = async (): Promise<PortalGuideSection[]> => {
-  const { data } = await axios.get(`${BASE_URL}/portal-guide`);
+  const { data } = await axios.get(`${BASE_URL}/portal-guide/public`);
   return data.data.data || [];
 };
 

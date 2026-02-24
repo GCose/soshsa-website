@@ -1,33 +1,51 @@
+import { useState, useCallback } from "react";
 import useSWR from "swr";
-import {
-  TableColumn,
-  DashboardPageProps,
-  PortalGuideSection,
-  PortalGuideSectionsResponse,
-} from "@/types/interface/dashboard";
-import Image from "next/image";
+import axios, { AxiosError } from "axios";
 import { NextApiRequest } from "next";
 import { Toaster, toast } from "sonner";
-import axios, { AxiosError } from "axios";
+import { Plus, Edit, Trash2, Upload, Image as ImageIcon } from "lucide-react";
 import { isLoggedIn } from "@/utils/auth";
-import useDebounce from "@/utils/debounce";
-import { useState, useCallback } from "react";
 import { getErrorMessage } from "@/utils/error";
+import useDebounce from "@/utils/debounce";
 import Sheet from "@/components/dashboard/ui/Sheet";
 import Table from "@/components/dashboard/ui/Table";
 import Button from "@/components/dashboard/ui/Button";
+import SearchBar from "@/components/dashboard/ui/SearchBar";
 import { BASE_URL, JEETIX_BASE_URL } from "@/utils/url";
 import Input from "@/components/dashboard/ui/InputField";
 import { CustomError, ErrorResponseData } from "@/types";
 import Textarea from "@/components/dashboard/ui/TextArea";
-import SearchBar from "@/components/dashboard/ui/SearchBar";
+import { renderPublishedBadge } from "@/utils/badge";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
-import { Plus, Edit, Trash2, Upload, Image as ImageIcon } from "lucide-react";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
+import { TableColumn, DashboardPageProps } from "@/types/interface/dashboard";
+import Image from "next/image";
+
+interface PortalGuideSection {
+  id: string;
+  heading: string;
+  body: string;
+  imageUrl?: string;
+  order: number;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PortalGuideSectionsResponse {
+  data: PortalGuideSection[];
+  meta: {
+    total: number;
+  };
+}
+
+type FilterStatus = "all" | "published" | "draft";
 
 const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
+  const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearch = useDebounce(searchQuery, 500);
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [viewingSection, setViewingSection] =
     useState<PortalGuideSection | null>(null);
@@ -41,6 +59,7 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
     body: "",
     imageUrl: "",
     order: 1,
+    isPublished: true,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -51,35 +70,48 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
     isOpen: false,
     id: null,
   });
+  const limit = 15;
 
   const fetchSections = async (): Promise<PortalGuideSectionsResponse> => {
-    const { data } = await axios.get(`${BASE_URL}/portal-guide`);
+    const params: Record<string, string | number> = {
+      page: page - 1,
+      limit,
+    };
+
+    if (debouncedSearch) params.search = debouncedSearch;
+    if (filterStatus === "published") params.isPublished = "true";
+    if (filterStatus === "draft") params.isPublished = "false";
+
+    const { data } = await axios.get(`${BASE_URL}/portal-guide`, {
+      params,
+      headers: { Authorization: `Bearer ${adminData.token}` },
+    });
     return data.data;
   };
 
-  const { data, mutate, isLoading } = useSWR(["portal-guide"], fetchSections, {
-    revalidateOnFocus: false,
-    onError: (error) => {
-      const { message } = getErrorMessage(
-        error as AxiosError<ErrorResponseData> | CustomError | Error,
-      );
-      toast.error("Failed to load portal guide sections", {
-        description: message,
-        duration: 4000,
-      });
+  const { data, mutate, isLoading } = useSWR(
+    ["portal-guide", adminData.token, page, debouncedSearch, filterStatus],
+    fetchSections,
+    {
+      revalidateOnFocus: false,
+      onError: (error) => {
+        const { message } = getErrorMessage(
+          error as AxiosError<ErrorResponseData> | CustomError | Error,
+        );
+        toast.error("Failed to load portal guide sections", {
+          description: message,
+          duration: 4000,
+        });
+      },
     },
-  });
+  );
 
   const sections = data?.data ?? [];
-
-  const filteredSections = sections.filter(
-    (section) =>
-      section.heading.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      section.body.toLowerCase().includes(debouncedSearch.toLowerCase()),
-  );
+  const totalPages = data ? Math.ceil(data.meta.total / limit) : 0;
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
+    setPage(1);
   }, []);
 
   const handleView = (section: PortalGuideSection) => {
@@ -95,6 +127,7 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
         body: section.body,
         imageUrl: section.imageUrl || "",
         order: section.order,
+        isPublished: section.isPublished,
       });
       setImagePreview(section.imageUrl || "");
       setImageFile(null);
@@ -107,6 +140,7 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
         body: "",
         imageUrl: "",
         order: nextOrder,
+        isPublished: true,
       });
       setImagePreview("");
       setImageFile(null);
@@ -169,6 +203,7 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
         body: formData.body,
         imageUrl: imageUrl || undefined,
         order: formData.order,
+        isPublished: formData.isPublished,
       };
 
       toast.loading(`${editingSection ? "Updating" : "Creating"} section...`, {
@@ -265,6 +300,11 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
         ),
     },
     {
+      key: "isPublished",
+      label: "Status",
+      render: (value) => renderPublishedBadge(value as boolean),
+    },
+    {
       key: "id",
       label: "Actions",
       render: (_value, row) => (
@@ -300,6 +340,38 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
       <DashboardLayout pageTitle="Portal Guide" adminData={adminData}>
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={filterStatus === "all" ? "primary" : "secondary"}
+                onClick={() => {
+                  setFilterStatus("all");
+                  setPage(1);
+                }}
+              >
+                All
+              </Button>
+              <Button
+                variant={filterStatus === "published" ? "primary" : "secondary"}
+                onClick={() => {
+                  setFilterStatus("published");
+                  setPage(1);
+                }}
+              >
+                Published
+              </Button>
+              <Button
+                variant={filterStatus === "draft" ? "primary" : "secondary"}
+                onClick={() => {
+                  setFilterStatus("draft");
+                  setPage(1);
+                }}
+              >
+                Draft
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <SearchBar
               placeholder="Search sections..."
               onSearch={handleSearch}
@@ -317,10 +389,16 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
 
           <Table
             columns={columns}
-            data={filteredSections}
+            data={sections}
             loading={isLoading}
             emptyMessage="No portal guide sections found"
             onRowClick={handleView}
+            pagination={{
+              page,
+              totalPages,
+              total: data?.meta.total,
+              onPageChange: setPage,
+            }}
           />
         </div>
 
@@ -336,16 +414,14 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
                   <label className="block text-sm font-medium text-gray-500 mb-1">
                     Order
                   </label>
-                  <p className="text-gray-900 font-medium">
-                    #{viewingSection.order}
-                  </p>
+                  <p className="text-gray-900">#{viewingSection.order}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">
                     Heading
                   </label>
-                  <p className="text-gray-900 font-medium text-lg">
+                  <p className="text-gray-900 text-lg">
                     {viewingSection.heading}
                   </p>
                 </div>
@@ -374,6 +450,13 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
                     </div>
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Status
+                  </label>
+                  {renderPublishedBadge(viewingSection.isPublished)}
+                </div>
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-gray-200">
@@ -472,6 +555,21 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
               >
                 <Upload size={16} />
                 {imagePreview ? "Change Image" : "Upload Image"}
+              </label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isPublished"
+                checked={formData.isPublished}
+                onChange={(e) =>
+                  setFormData({ ...formData, isPublished: e.target.checked })
+                }
+                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+              />
+              <label htmlFor="isPublished" className="text-sm text-gray-700">
+                Publish immediately
               </label>
             </div>
 
