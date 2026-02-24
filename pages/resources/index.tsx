@@ -1,6 +1,6 @@
 import useSWR from "swr";
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { toast, Toaster } from "sonner";
 import { BASE_URL } from "@/utils/url";
@@ -46,6 +46,20 @@ interface UsefulLink {
   category: string;
 }
 
+interface CitationsResponse {
+  data: CitationFile[];
+  meta: {
+    total: number;
+  };
+}
+
+interface LinksResponse {
+  data: UsefulLink[];
+  meta: {
+    total: number;
+  };
+}
+
 type TabType = "brochures" | "citations" | "links";
 
 const ResourcesPage = () => {
@@ -55,6 +69,16 @@ const ResourcesPage = () => {
   const [yearFilter, setYearFilter] = useState<number | "all">("all");
   const [downloading, setDownloading] = useState<string | null>(null);
   const limit = 15;
+
+  const [citationsPage, setCitationsPage] = useState(0);
+  const [allCitations, setAllCitations] = useState<CitationFile[]>([]);
+  const [totalCitations, setTotalCitations] = useState(0);
+  const [loadingMoreCitations, setLoadingMoreCitations] = useState(false);
+
+  const [linksPage, setLinksPage] = useState(0);
+  const [allLinks, setAllLinks] = useState<UsefulLink[]>([]);
+  const [totalLinks, setTotalLinks] = useState(0);
+  const [loadingMoreLinks, setLoadingMoreLinks] = useState(false);
 
   const debouncedCourseSearch = useDebounce(courseSearch, 500);
 
@@ -72,14 +96,18 @@ const ResourcesPage = () => {
     return data.data;
   };
 
-  const fetchCitationFiles = async (): Promise<CitationFile[]> => {
-    const { data } = await axios.get(`${BASE_URL}/citation-files`);
-    return data.data.data || [];
+  const fetchInitialCitations = async (): Promise<CitationsResponse> => {
+    const { data } = await axios.get(`${BASE_URL}/citation-files`, {
+      params: { page: 0, limit: 12 },
+    });
+    return data.data;
   };
 
-  const fetchUsefulLinks = async (): Promise<UsefulLink[]> => {
-    const { data } = await axios.get(`${BASE_URL}/useful-links`);
-    return data.data.data || [];
+  const fetchInitialLinks = async (): Promise<LinksResponse> => {
+    const { data } = await axios.get(`${BASE_URL}/useful-links`, {
+      params: { page: 0, limit: 12 },
+    });
+    return data.data;
   };
 
   const { data: coursesData, isLoading: loadingCourses } = useSWR(
@@ -92,9 +120,9 @@ const ResourcesPage = () => {
     },
   );
 
-  const { data: citationFiles = [], isLoading: loadingCitations } = useSWR(
-    "citation-files",
-    fetchCitationFiles,
+  const { data: initialCitationsData, isLoading: loadingCitations } = useSWR(
+    "citation-files-initial",
+    fetchInitialCitations,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -102,22 +130,68 @@ const ResourcesPage = () => {
     },
   );
 
-  const { data: usefulLinks = [], isLoading: loadingLinks } = useSWR(
-    "useful-links",
-    fetchUsefulLinks,
+  const { data: initialLinksData, isLoading: loadingLinks } = useSWR(
+    "useful-links-initial",
+    fetchInitialLinks,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateIfStale: false,
     },
   );
+
+  useEffect(() => {
+    if (initialCitationsData) {
+      setAllCitations(initialCitationsData.data);
+      setTotalCitations(initialCitationsData.meta.total);
+    }
+  }, [initialCitationsData]);
+
+  useEffect(() => {
+    if (initialLinksData) {
+      setAllLinks(initialLinksData.data);
+      setTotalLinks(initialLinksData.meta.total);
+    }
+  }, [initialLinksData]);
+
+  const loadMoreCitations = async () => {
+    setLoadingMoreCitations(true);
+    try {
+      const nextPage = citationsPage + 1;
+      const { data } = await axios.get(`${BASE_URL}/citation-files`, {
+        params: { page: nextPage, limit: 12 },
+      });
+      setAllCitations((prev) => [...prev, ...data.data.data]);
+      setCitationsPage(nextPage);
+    } catch {
+      toast.error("Failed to load more citations");
+    } finally {
+      setLoadingMoreCitations(false);
+    }
+  };
+
+  const loadMoreLinks = async () => {
+    setLoadingMoreLinks(true);
+    try {
+      const nextPage = linksPage + 1;
+      const { data } = await axios.get(`${BASE_URL}/useful-links`, {
+        params: { page: nextPage, limit: 12 },
+      });
+      setAllLinks((prev) => [...prev, ...data.data.data]);
+      setLinksPage(nextPage);
+    } catch {
+      toast.error("Failed to load more links");
+    } finally {
+      setLoadingMoreLinks(false);
+    }
+  };
 
   const courses = coursesData?.data || [];
   const totalPages = coursesData
     ? Math.ceil(coursesData.meta.total / limit)
     : 0;
 
-  const groupedCitations = citationFiles.reduce(
+  const groupedCitations = allCitations.reduce(
     (acc, file) => {
       if (!acc[file.category]) acc[file.category] = [];
       acc[file.category].push(file);
@@ -125,6 +199,9 @@ const ResourcesPage = () => {
     },
     {} as Record<string, CitationFile[]>,
   );
+
+  const hasMoreCitations = allCitations.length < totalCitations;
+  const hasMoreLinks = allLinks.length < totalLinks;
 
   const handleDownload = async (
     fileUrl: string,
@@ -251,7 +328,7 @@ const ResourcesPage = () => {
                         setCourseSearch(e.target.value);
                         setCoursePage(1);
                       }}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="w-full pl-10 pr-4 py-2.5 border border-teal-100 focus:border-teal-200 rounded-lg"
                     />
                   </div>
                   <select
@@ -400,60 +477,74 @@ const ResourcesPage = () => {
                     No citation resources available at the moment.
                   </p>
                 ) : (
-                  <div className="space-y-12">
-                    {Object.entries(groupedCitations).map(
-                      ([category, files]) => (
-                        <div key={category}>
-                          <h3 className="text-xl font-bold text-gray-800 mb-4">
-                            {category}
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {files.map((file, index) => (
-                              <motion.div
-                                key={file.id}
-                                className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow group cursor-pointer"
-                                onClick={() =>
-                                  handleDownload(
-                                    file.fileUrl,
-                                    `${file.title}.${file.format.toLowerCase()}`,
-                                    "soshsa/citations",
-                                  )
-                                }
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{
-                                  duration: 0.4,
-                                  delay: index * 0.05,
-                                }}
-                              >
-                                <div className="flex items-start gap-3 mb-3">
-                                  {getFileIcon(file.format)}
-                                  <div className="flex-1">
-                                    <h4 className="font-bold text-gray-900 group-hover:text-primary transition-colors mb-1">
-                                      {file.title}
-                                    </h4>
-                                    <span className="text-xs text-gray-500">
-                                      {file.format}
-                                    </span>
+                  <>
+                    <div className="space-y-12">
+                      {Object.entries(groupedCitations).map(
+                        ([category, files]) => (
+                          <div key={category}>
+                            <h3 className="text-xl font-bold text-gray-800 mb-4">
+                              {category}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {files.map((file, index) => (
+                                <motion.div
+                                  key={file.id}
+                                  className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow group cursor-pointer"
+                                  onClick={() =>
+                                    handleDownload(
+                                      file.fileUrl,
+                                      `${file.title}.${file.format.toLowerCase()}`,
+                                      "soshsa/citations",
+                                    )
+                                  }
+                                  initial={{ opacity: 0, y: 20 }}
+                                  whileInView={{ opacity: 1, y: 0 }}
+                                  viewport={{ once: true }}
+                                  transition={{
+                                    duration: 0.4,
+                                    delay: index * 0.05,
+                                  }}
+                                >
+                                  <div className="flex items-start gap-3 mb-3">
+                                    {getFileIcon(file.format)}
+                                    <div className="flex-1">
+                                      <h4 className="font-bold text-gray-900 group-hover:text-primary transition-colors mb-1">
+                                        {file.title}
+                                      </h4>
+                                      <span className="text-xs text-gray-500">
+                                        {file.format}
+                                      </span>
+                                    </div>
                                   </div>
-                                </div>
-                                <p className="text-sm text-gray-600 mb-4">
-                                  {file.description}
-                                </p>
-                                <div className="flex items-center gap-2 text-primary text-sm font-medium">
-                                  <Download size={16} />
-                                  {downloading === file.fileUrl
-                                    ? "Downloading..."
-                                    : "Download"}
-                                </div>
-                              </motion.div>
-                            ))}
+                                  <p className="text-sm text-gray-600 mb-4">
+                                    {file.description}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-primary text-sm font-medium">
+                                    <Download size={16} />
+                                    {downloading === file.fileUrl
+                                      ? "Downloading..."
+                                      : "Download"}
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ),
+                        ),
+                      )}
+                    </div>
+
+                    {hasMoreCitations && (
+                      <div className="flex justify-center pt-8">
+                        <button
+                          onClick={loadMoreCitations}
+                          disabled={loadingMoreCitations}
+                          className="px-8 py-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingMoreCitations ? "Loading..." : "Load More"}
+                        </button>
+                      </div>
                     )}
-                  </div>
+                  </>
                 )}
               </div>
             )}
@@ -473,70 +564,84 @@ const ResourcesPage = () => {
                       </div>
                     ))}
                   </div>
-                ) : usefulLinks.length === 0 ? (
+                ) : allLinks.length === 0 ? (
                   <p className="text-gray-500 text-center py-10">
                     No useful links available at the moment.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {usefulLinks.map((link, index) => (
-                      <motion.div
-                        key={link.id}
-                        className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow group"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: index * 0.05 }}
-                      >
-                        <div className="flex items-start gap-3 mb-3">
-                          <ExternalLink
-                            size={20}
-                            className="text-primary mt-1"
-                          />
-                          <div className="flex-1">
-                            <h4 className="font-bold text-gray-900 group-hover:text-primary transition-colors mb-1">
-                              {link.title}
-                            </h4>
-                            <span className="text-xs text-gray-500">
-                              {link.category}
-                            </span>
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {allLinks.map((link, index) => (
+                        <motion.div
+                          key={link.id}
+                          className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow group"
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.4, delay: index * 0.05 }}
+                        >
+                          <div className="flex items-start gap-3 mb-3">
+                            <ExternalLink
+                              size={20}
+                              className="text-primary mt-1"
+                            />
+                            <div className="flex-1">
+                              <h4 className="font-bold text-gray-900 group-hover:text-primary transition-colors mb-1">
+                                {link.title}
+                              </h4>
+                              <span className="text-xs text-gray-500">
+                                {link.category}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-4">
-                          {link.description}
-                        </p>
-                        <div className="flex items-center gap-4">
-                          <a
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-primary text-sm font-medium hover:underline"
-                          >
-                            <ExternalLink size={14} />
-                            Visit Link
-                          </a>
-                          {link.fileUrl && (
-                            <button
-                              onClick={() =>
-                                handleDownload(
-                                  link.fileUrl!,
-                                  `${link.title}.pdf`,
-                                  "soshsa/links",
-                                )
-                              }
-                              disabled={downloading === link.fileUrl}
-                              className="inline-flex items-center gap-2 text-gray-700 text-sm font-medium hover:text-primary disabled:opacity-50"
+                          <p className="text-sm text-gray-600 mb-4">
+                            {link.description}
+                          </p>
+                          <div className="flex items-center gap-4">
+                            <a
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-primary text-sm font-medium hover:underline"
                             >
-                              <Download size={14} />
-                              {downloading === link.fileUrl
-                                ? "Downloading..."
-                                : "Download File"}
-                            </button>
-                          )}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                              <ExternalLink size={14} />
+                              Visit Link
+                            </a>
+                            {link.fileUrl && link.fileUrl.trim() !== "" && (
+                              <button
+                                onClick={() =>
+                                  handleDownload(
+                                    link.fileUrl!,
+                                    `${link.title}.pdf`,
+                                    "soshsa/links",
+                                  )
+                                }
+                                disabled={downloading === link.fileUrl}
+                                className="inline-flex items-center gap-2 text-gray-700 text-sm font-medium hover:text-primary disabled:opacity-50"
+                              >
+                                <Download size={14} />
+                                {downloading === link.fileUrl
+                                  ? "Downloading..."
+                                  : "Download File"}
+                              </button>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {hasMoreLinks && (
+                      <div className="flex justify-center pt-8">
+                        <button
+                          onClick={loadMoreLinks}
+                          disabled={loadingMoreLinks}
+                          className="px-8 py-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loadingMoreLinks ? "Loading..." : "Load More"}
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

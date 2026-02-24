@@ -1,9 +1,17 @@
 import useSWR from "swr";
-import { useState } from "react";
+import {
+  TableColumn,
+  DashboardPageProps,
+  PortalGuideSection,
+  PortalGuideSectionsResponse,
+} from "@/types/interface/dashboard";
+import Image from "next/image";
 import { NextApiRequest } from "next";
 import { Toaster, toast } from "sonner";
-import { isLoggedIn } from "@/utils/auth";
 import axios, { AxiosError } from "axios";
+import { isLoggedIn } from "@/utils/auth";
+import useDebounce from "@/utils/debounce";
+import { useState, useCallback } from "react";
 import { getErrorMessage } from "@/utils/error";
 import Sheet from "@/components/dashboard/ui/Sheet";
 import Table from "@/components/dashboard/ui/Table";
@@ -12,27 +20,14 @@ import { BASE_URL, JEETIX_BASE_URL } from "@/utils/url";
 import Input from "@/components/dashboard/ui/InputField";
 import { CustomError, ErrorResponseData } from "@/types";
 import Textarea from "@/components/dashboard/ui/TextArea";
+import SearchBar from "@/components/dashboard/ui/SearchBar";
 import DashboardLayout from "@/components/dashboard/layout/DashboardLayout";
-import { TableColumn, DashboardPageProps } from "@/types/interface/dashboard";
 import { Plus, Edit, Trash2, Upload, Image as ImageIcon } from "lucide-react";
 import ConfirmationModal from "@/components/dashboard/ui/modals/ConfirmationModal";
-import Image from "next/image";
-
-interface PortalGuideSection {
-  id: string;
-  heading: string;
-  body: string;
-  imageUrl?: string;
-  order: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface PortalGuideSectionsResponse {
-  data: PortalGuideSection[];
-}
 
 const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 500);
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [viewingSection, setViewingSection] =
     useState<PortalGuideSection | null>(null);
@@ -76,6 +71,16 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
   });
 
   const sections = data?.data ?? [];
+
+  const filteredSections = sections.filter(
+    (section) =>
+      section.heading.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      section.body.toLowerCase().includes(debouncedSearch.toLowerCase()),
+  );
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
 
   const handleView = (section: PortalGuideSection) => {
     setViewingSection(section);
@@ -233,24 +238,17 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
     {
       key: "order",
       label: "Order",
-      render: (value) => (
-        <span className="font-medium text-gray-900">#{value as number}</span>
-      ),
+      render: (value) => `#${value}`,
     },
     {
       key: "heading",
       label: "Heading",
-      render: (value) => (
-        <span className="font-medium text-gray-900">{value as string}</span>
-      ),
     },
     {
       key: "body",
       label: "Body",
       render: (value) => (
-        <span className="text-sm text-gray-600 truncate max-w-md block">
-          {value as string}
-        </span>
+        <span className="truncate max-w-md block">{value as string}</span>
       ),
     },
     {
@@ -301,10 +299,13 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
       <Toaster position="top-right" richColors />
       <DashboardLayout pageTitle="Portal Guide" adminData={adminData}>
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <p className="text-gray-600">
-              Manage UTG Portal guide sections for students
-            </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <SearchBar
+              placeholder="Search sections..."
+              onSearch={handleSearch}
+              className="flex-1 max-w-md"
+            />
+
             <Button
               variant="primary"
               onClick={() => handleOpenSheet()}
@@ -316,7 +317,7 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
 
           <Table
             columns={columns}
-            data={sections}
+            data={filteredSections}
             loading={isLoading}
             emptyMessage="No portal guide sections found"
             onRowClick={handleView}

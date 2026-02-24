@@ -266,16 +266,14 @@ export interface PortalGuideSection {
     id: string;
     heading: string;
     body: string;
-    image: string | null;
+    imageUrl?: string;
     order: number;
+    createdAt: string;
+    updatedAt: string;
 }
 
-export interface PortalGuide {
-    id: string;
-    title: string;
-    sections: PortalGuideSection[];
-    isPublished: boolean;
-    updatedAt: string;
+export interface PortalGuideSectionsResponse {
+    data: PortalGuideSection[];
 }
 
 export interface AssociationIntro {
