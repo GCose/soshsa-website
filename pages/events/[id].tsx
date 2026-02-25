@@ -68,7 +68,7 @@ const EventDetailPage = () => {
 
   return (
     <Layout title={`SoSHSA | ${event.title}`} description={event.description}>
-      <article className="relative bg-white py-2 lg:py-15">
+      <article className="relative bg-white py-10 lg:py-15">
         <div className="w-full max-w-7xl mx-auto px-6 lg:px-8">
           <Link
             href="/events"
@@ -95,12 +95,12 @@ const EventDetailPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="relative w-full h-screen overflow-hidden mb-8">
+            <div className="relative w-full h-96 overflow-hidden mb-8">
               <Image
                 src={event.imageUrl}
                 alt={event.title}
                 fill
-                className="object-contain"
+                className="object-cover"
               />
             </div>
 
