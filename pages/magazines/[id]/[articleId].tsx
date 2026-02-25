@@ -226,7 +226,7 @@ const ArticleDetailPage = () => {
 
             {article.imageUrl && (
               <motion.div
-                className="relative w-full h-screen mb-12"
+                className="relative w-full h-96 md:h-screen mb-12"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
@@ -235,7 +235,7 @@ const ArticleDetailPage = () => {
                   src={article.imageUrl}
                   alt={article.title}
                   fill
-                  className="object-contain"
+                  className="object-cover md:object-contain"
                 />
               </motion.div>
             )}
