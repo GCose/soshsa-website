@@ -16,7 +16,7 @@ interface Magazine {
 
 const fetchPublishedMagazines = async (): Promise<Magazine[]> => {
   const { data } = await axios.get(`${BASE_URL}/magazines`, {
-    params: { isPublished: true, limit: 50 },
+    params: { isPublished: true, limit: 15 },
   });
   return data.data.data;
 };

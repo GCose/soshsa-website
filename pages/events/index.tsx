@@ -22,7 +22,7 @@ interface Event {
 
 const fetchPublishedEvents = async (): Promise<Event[]> => {
   const { data } = await axios.get(`${BASE_URL}/events`, {
-    params: { isPublished: true, limit: 50 },
+    params: { isPublished: true, limit: 15 },
   });
   return data.data.data;
 };

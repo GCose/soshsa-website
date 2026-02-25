@@ -31,7 +31,7 @@ const fetchMagazineArticles = async (
   magazineId: string,
 ): Promise<MagazineArticle[]> => {
   const { data } = await axios.get(`${BASE_URL}/magazine-articles`, {
-    params: { magazine: magazineId, isPublished: true, limit: 50 },
+    params: { magazine: magazineId, isPublished: true, limit: 15 },
   });
   return data.data.data;
 };

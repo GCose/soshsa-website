@@ -82,7 +82,7 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
     if (filterStatus === "published") params.isPublished = "true";
     if (filterStatus === "draft") params.isPublished = "false";
 
-    const { data } = await axios.get(`${BASE_URL}/portal-guide`, {
+    const { data } = await axios.get(`${BASE_URL}/portal-guides`, {
       params,
       headers: { Authorization: `Bearer ${adminData.token}` },
     });
@@ -90,7 +90,7 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
   };
 
   const { data, mutate, isLoading } = useSWR(
-    ["portal-guide", adminData.token, page, debouncedSearch, filterStatus],
+    ["portal-guides", adminData.token, page, debouncedSearch, filterStatus],
     fetchSections,
     {
       revalidateOnFocus: false,
@@ -212,14 +212,14 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
 
       if (editingSection) {
         await axios.patch(
-          `${BASE_URL}/portal-guide/${editingSection.id}`,
+          `${BASE_URL}/portal-guides/${editingSection.id}`,
           payload,
           {
             headers: { Authorization: `Bearer ${adminData.token}` },
           },
         );
       } else {
-        await axios.post(`${BASE_URL}/portal-guide`, payload, {
+        await axios.post(`${BASE_URL}/portal-guides`, payload, {
           headers: { Authorization: `Bearer ${adminData.token}` },
         });
       }
@@ -250,7 +250,7 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
   const handleDelete = async (id: string) => {
     try {
       toast.loading("Deleting section...", { id: "delete-toast" });
-      await axios.delete(`${BASE_URL}/portal-guide/${id}`, {
+      await axios.delete(`${BASE_URL}/portal-guides/${id}`, {
         headers: { Authorization: `Bearer ${adminData.token}` },
       });
       toast.dismiss("delete-toast");
@@ -482,7 +482,7 @@ const PortalGuidePage = ({ adminData }: DashboardPageProps) => {
         </Sheet>
 
         <Sheet
-          size="xl"
+          size="lg"
           isOpen={sheetOpen}
           onClose={handleCloseSheet}
           title={editingSection ? "Edit Section" : "Add Section"}

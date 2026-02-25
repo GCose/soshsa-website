@@ -1,10 +1,10 @@
 import useSWR from "swr";
 import axios from "axios";
+import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { BASE_URL } from "@/utils/url";
 import Layout from "@/components/website/Layout";
-import Link from "next/link";
 
 interface PortalGuideSection {
   id: string;
@@ -15,7 +15,7 @@ interface PortalGuideSection {
 }
 
 const fetchSections = async (): Promise<PortalGuideSection[]> => {
-  const { data } = await axios.get(`${BASE_URL}/portal-guide/public`);
+  const { data } = await axios.get(`${BASE_URL}/portal-guides`);
   return data.data.data || [];
 };
 
@@ -36,7 +36,7 @@ const PortalGuidePage = () => {
       description="Complete guide to using the UTG Student Portal"
     >
       <section className="relative bg-white py-15 lg:py-15">
-        <div className="w-full max-w-4xl mx-auto px-6 lg:px-8">
+        <div className="w-full max-w-7xl mx-auto px-6 lg:px-8">
           <motion.div
             className="mb-12"
             initial={{ opacity: 0, y: 20 }}
@@ -99,7 +99,7 @@ const PortalGuidePage = () => {
                     </p>
 
                     {section.imageUrl && (
-                      <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-100 shadow-lg">
+                      <div className="relative w-full h-screen overflow-hidden">
                         <Image
                           src={section.imageUrl}
                           alt={section.heading}
