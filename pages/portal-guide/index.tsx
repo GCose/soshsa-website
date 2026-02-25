@@ -101,12 +101,12 @@ const PortalGuidePage = () => {
                     </p>
 
                     {section.imageUrl && (
-                      <div className="relative w-full h-screen overflow-hidden">
+                      <div className="relative w-full h-96 md:h-screen overflow-hidden">
                         <Image
                           src={section.imageUrl}
                           alt={section.heading}
                           fill
-                          className="object-contain"
+                          className="object-cover md:object-contain"
                         />
                       </div>
                     )}
