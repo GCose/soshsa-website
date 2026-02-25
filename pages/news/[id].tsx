@@ -98,12 +98,12 @@ const NewsDetailPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="relative w-full h-screen overflow-hidden mb-8">
+            <div className="relative w-full h-96 md:h-screen overflow-hidden mb-8">
               <Image
                 src={article.imageUrl}
                 alt={article.title}
                 fill
-                className="object-contain"
+                className="object-cover md:object-contain"
               />
             </div>
 
