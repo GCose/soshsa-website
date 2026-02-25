@@ -32,8 +32,10 @@ const PortalGuidePage = () => {
 
   return (
     <Layout
+      ogImage="/images/logo.jpeg"
       title="SoSHSA | UTG Portal Guide"
       description="Complete guide to using the UTG Student Portal"
+      keywords="UTG portal guide, UTG student portal, how to use UTG portal, UTG portal navigation, UTG portal tutorial, UTG portal help, SoSHSA UTG portal guide"
     >
       <section className="relative bg-white py-15 lg:py-15">
         <div className="w-full max-w-7xl mx-auto px-6 lg:px-8">

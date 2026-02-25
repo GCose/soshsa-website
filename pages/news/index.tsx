@@ -46,6 +46,8 @@ const NewsPage = () => {
   return (
     <Layout
       title="SoSHSA | News"
+      ogImage="/images/logo.jpeg"
+      keywords="SOSHSA news, SOSHSA announcements, SOSHSA updates, SoSHSA UTG news, SoSHSA UTG announcements, SoSHSA UTG updates, SOSHSA events news, SOSHSA student news"
       description="Stay updated with the latest news and announcements from the Social Sciences and Humanities Students Association."
     >
       <section className="relative bg-white py-10 lg:py-15">

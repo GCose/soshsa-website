@@ -268,6 +268,8 @@ const ResourcesPage = () => {
       <Toaster position="top-right" richColors />
       <Layout
         title="SoSHSA | Resources"
+        ogImage="/images/logo.jpeg"
+        keywords="SOSHSA resources, SOSHSA course brochures, SOSHSA citation guides, SOSHSA useful links, SOSHSA academic resources, SOSHSA student tools, SoSHSA UTG resources"
         description="Access course brochures, citation guides, and useful links"
       >
         <section className="relative bg-white py-15 lg:py-15">
