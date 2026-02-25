@@ -8,8 +8,8 @@ export default function App({ Component, pageProps }: AppProps) {
       value={{
         revalidateOnFocus: false,
         revalidateOnReconnect: false,
-        revalidateIfStale: false,
-        dedupingInterval: 10 * 60 * 1000,
+        revalidateIfStale: true,
+        dedupingInterval: 15 * 60 * 1000,
         errorRetryCount: 3,
         errorRetryInterval: 5000,
         shouldRetryOnError: true,
