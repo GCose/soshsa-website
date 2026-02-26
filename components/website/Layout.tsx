@@ -28,8 +28,7 @@ const Layout = ({
   modifiedTime,
   canonicalUrl,
 }: LayoutProps) => {
-  const siteUrl = "https://soshsa.org"; // Replace with actual domain
-  const defaultImage = `${siteUrl}/images/logo.jpeg`;
+  const siteUrl = "https://soshsa.vercel.app";
   const fullOgImage = ogImage?.startsWith("http")
     ? ogImage
     : `${siteUrl}${ogImage}`;
